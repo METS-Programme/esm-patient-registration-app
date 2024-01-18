@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Overlay from '../../../ui-components/overlay';
 import { useTranslation } from 'react-i18next';
 import { isDesktop, useLayoutType } from '@openmrs/esm-framework';
-import { Button, ButtonSet, Checkbox, Search, RadioButtonGroup, RadioButton } from '@carbon/react';
+import { Button, ButtonSet } from '@carbon/react';
 import styles from './fingerprint-capture.scss';
 import ThumbPrint from './thumbprint.component';
 
@@ -10,21 +10,23 @@ interface FingerPrintCaptureOverlay {
   closeOverlay: () => void;
 }
 
-export const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeOverlay }) => {
+const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeOverlay }) => {
   const { t } = useTranslation();
-
   const layout = useLayoutType();
-
   const thumbsList = ['Right Thumb', 'Right Index', 'Left Thumb', 'Left Index', 'Right Middle', 'Left Middle'];
 
-  const [clickeditem, setClickedItem] = useState<number | null>();
+  const [clickedData, setClickedData] = useState<string | undefined>();
 
   // save fingerPrints
   const handleSubmittingFingerPrints = () => {
-    console.info('Successfully submitted fingerPrint');
+    if (clickedData) {
+      console.info(`Successfully submitted fingerPrint: ${clickedData}`);
+      // Clear the clicked data after processing if needed
+      setClickedData(undefined);
+    }
   };
 
-  const handleThumbClick = (index: number) => setClickedItem(index);
+  const handleThumbClick = (data: string) => setClickedData(data);
 
   return (
     <Overlay
@@ -48,13 +50,18 @@ export const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeO
         <section className={styles.section}>
           <div className={styles.gridContainer}>
             {thumbsList.map((element, index) => (
-              <ThumbPrint key={`${element}-${index}`} data={element} onClick={handleThumbClick(index)} />
+              <ThumbPrint
+                key={`${element}-${index}`}
+                data={element}
+                onClick={handleThumbClick}
+                isActive={element === clickedData}
+              />
             ))}
           </div>
         </section>
 
         <section className={styles.section}>
-          <h4 style={{ margin: '5px' }}> {`Scanning ${thumbsList[clickeditem]}`} </h4>
+          <h4 style={{ margin: '5px' }}> {`Scanning ${clickedData || thumbsList[0]}`} </h4>
           <div className={styles.gridContainer}></div>
         </section>
 
@@ -65,3 +72,5 @@ export const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeO
     </Overlay>
   );
 };
+
+export default FingerPrintCapture;

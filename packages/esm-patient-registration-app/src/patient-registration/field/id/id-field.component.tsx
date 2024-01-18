@@ -14,7 +14,7 @@ import {
 } from '../../patient-registration.types';
 import { ResourcesContext } from '../../../offline.resources';
 import styles from '../field.scss';
-import { FingerPrintCapture } from '../../input/custom-input/fingerprint-capture/fingerprint-capture.component';
+import FingerPrintCapture from '../../input/custom-input/fingerprint-capture/fingerprint-capture.component';
 
 export function setIdentifierSource(
   identifierSource: IdentifierSource,

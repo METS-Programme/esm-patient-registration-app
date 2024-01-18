@@ -1,14 +1,16 @@
 import React from 'react';
-import styles from './fingerprint-capture.scss'; // Import your component-specific styles
+import styles from './fingerprint-capture.scss';
+import thumb96 from '../../../../assets/thumb-96.png';
 
 interface ThumbPrintProps {
-  data?: string;
-  onClick: () => void;
+  data: string;
+  onClick: (clickedData: string) => void;
+  isActive: boolean;
 }
 
-const ThumbPrint = ({ data, onClick }) => (
-  <div className={styles.centeredContainer} onClick={onClick && (() => onClick(data))}>
-    <img src={data.imageUrl} alt={data.altText} className={styles.centeredImage} />
+const ThumbPrint: React.FC<ThumbPrintProps> = ({ data, onClick, isActive }) => (
+  <div className={`${styles.centeredContainer} ${isActive ? styles.activeThumb : ''}`} onClick={() => onClick(data)}>
+    <img src={thumb96} alt={'photo'} className={styles.centeredImage} />
     {data && <p className={styles.centeredText}>Scan {data}</p>}
   </div>
 );
