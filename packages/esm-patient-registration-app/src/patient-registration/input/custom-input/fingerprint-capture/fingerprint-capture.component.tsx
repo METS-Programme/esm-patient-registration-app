@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Overlay from '../../../ui-components/overlay';
 import { useTranslation } from 'react-i18next';
 import { isDesktop, useLayoutType } from '@openmrs/esm-framework';
@@ -12,21 +12,19 @@ interface FingerPrintCaptureOverlay {
 
 export const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeOverlay }) => {
   const { t } = useTranslation();
+
   const layout = useLayoutType();
+
+  const thumbsList = ['Right Thumb', 'Right Index', 'Left Thumb', 'Left Index', 'Right Middle', 'Left Middle'];
+
+  const [clickeditem, setClickedItem] = useState<number | null>();
 
   // save fingerPrints
   const handleSubmittingFingerPrints = () => {
     console.info('Successfully submitted fingerPrint');
   };
 
-  const thumbsList = [
-    'Scan Right Thumb',
-    'Scan Right Index',
-    'Scan Left  Thumb',
-    'Scan Left  Index',
-    'Scan Right Middle',
-    'Scan Left Middle',
-  ];
+  const handleThumbClick = (index: number) => setClickedItem(index);
 
   return (
     <Overlay
@@ -50,12 +48,19 @@ export const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeO
         <section className={styles.section}>
           <div className={styles.gridContainer}>
             {thumbsList.map((element, index) => (
-              <ThumbPrint key={index} data={element} />
+              <ThumbPrint key={`${element}-${index}`} data={element} onClick={handleThumbClick(index)} />
             ))}
           </div>
         </section>
 
-        <section className={styles.section}></section>
+        <section className={styles.section}>
+          <h4 style={{ margin: '5px' }}> {`Scanning ${thumbsList[clickeditem]}`} </h4>
+          <div className={styles.gridContainer}></div>
+        </section>
+
+        <section className={styles.section}>
+          <h4> One more scan to go</h4>
+        </section>
       </div>
     </Overlay>
   );
