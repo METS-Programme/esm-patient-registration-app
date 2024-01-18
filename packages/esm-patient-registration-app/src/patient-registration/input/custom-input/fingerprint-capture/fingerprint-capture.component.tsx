@@ -21,7 +21,7 @@ export const FingerPrintCapture: React.FC<FingerPrintCaptureOverlay> = ({ closeO
   return (
     <Overlay
       close={closeOverlay}
-      header={t('addFingerPrint', 'Add Patient FingerPrint')}
+      header={t('addFingerPrint', 'Add Patient FingerPrints')}
       buttonsGroup={
         <ButtonSet className={isDesktop(layout) ? styles.desktop : styles.tablet}>
           <Button className={styles.button} kind="secondary" onClick={closeOverlay}>
