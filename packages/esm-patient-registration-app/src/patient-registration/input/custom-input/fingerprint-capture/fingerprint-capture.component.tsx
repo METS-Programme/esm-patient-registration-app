@@ -3,7 +3,7 @@ import Overlay from '../../../ui-components/overlay';
 import { useTranslation } from 'react-i18next';
 import { isDesktop, useLayoutType } from '@openmrs/esm-framework';
 import { Button, ButtonSet, Checkbox, Search, RadioButtonGroup, RadioButton } from '@carbon/react';
-import { styles } from './fingerprint-capture.scss';
+import styles from './fingerprint-capture.scss';
 
 interface FingerPrintCaptureOverlay {
   closeOverlay: () => void;
