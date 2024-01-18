@@ -1,4 +1,5 @@
 {
+  "addFingerPrint": "Add Patient FingerPrint",
   "addRelationshipButtonText": "Ajouter un lien de parenté",
   "addressHeader": "Adresse",
   "age": "Age",
@@ -85,6 +86,7 @@
   "relativeNamePlaceholder": "Prénom Nom de famile",
   "resetIdentifierTooltip": "Réinitialiser",
   "restoreRelationshipActionButton": "Annuler",
+  "saveFingerPrints": "Save FingerPrints ",
   "search": "Search Registry",
   "searchAddress": "Chercher l'adresse",
   "searchThisList": "Search this list",
