@@ -64,7 +64,7 @@ export const Identifiers: React.FC = () => {
   const { t } = useTranslation();
   const layout = useLayoutType();
   const [showIdentifierOverlay, setShowIdentifierOverlay] = useState(false);
-  const [showFingerPrintOverlay, setShowFingerPrintOverlay] = useState(false);
+  const [showFingerPrintOverlay, setShowFingerPrintOverlay] = useState(true);
   const config = useConfig();
   const { defaultPatientIdentifierTypes } = config;
 
