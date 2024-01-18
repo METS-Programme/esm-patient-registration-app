@@ -7,6 +7,7 @@ const path = require('path');
 module.exports = {
   transform: {
     '^.+\\.(j|t)sx?$': '@swc/jest',
+    '^.+\\.png$': path.resolve(__dirname, 'file-transformer.js'),
   },
   transformIgnorePatterns: ['/node_modules/(?!@openmrs)'],
   moduleNameMapper: {
