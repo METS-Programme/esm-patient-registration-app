@@ -58,6 +58,7 @@
     "jest": "^28.1.0",
     "jest-cli": "^28.1.0",
     "jest-environment-jsdom": "^28.1.0",
+    "jest-transform-stub": "^2.0.0",
     "lerna": "^3.20.2",
     "openmrs": "next",
     "prettier": "^2.4.1",
