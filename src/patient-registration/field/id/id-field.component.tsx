@@ -68,12 +68,13 @@ export const Identifiers: React.FC = () => {
   const { t } = useTranslation();
   const layout = useLayoutType();
   const { activePanel, openPanel, closePanel } = useWorkspaceContext();
-  // Desktop wide layout docks the picker as a workspace panel (rendered by
-  // the form shell); tablet and the classic layout use the overlay here.
-  const isDocked = isDesktop(layout);
-  const showIdentifierOverlay = activePanel === 'identifiers' && !isDocked;
   const [showFingerPrintOverlay, setShowFingerPrintOverlay] = useState(false);
   const config = useConfig<RegistrationConfig>();
+  // Only the desktop wide layout docks the picker as a workspace panel
+  // (rendered by the form shell); the classic layout and tablet sizes use
+  // the overlay here.
+  const isDocked = isDesktop(layout) && (config.layout?.variant ?? 'wide') === 'wide';
+  const showIdentifierOverlay = activePanel === 'identifiers' && !isDocked;
   const { defaultPatientIdentifierTypes } = config;
   const enableFingerprintCapture = config.fieldConfigurations?.identifier?.enableFingerprintCapture ?? false;
   // The Preferred option takes up room next to each identifier, so give long identifiers the full width

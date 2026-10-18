@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Form, Formik } from 'formik';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { getDefaultsFromConfigSchema, useConfig } from '@openmrs/esm-framework';
+import { getDefaultsFromConfigSchema, useConfig, useLayoutType, isDesktop } from '@openmrs/esm-framework';
 import { type AddressTemplate, type IdentifierSource } from '../../patient-registration.types';
 import { mockIdentifierTypes, mockOpenmrsId, mockPatient, mockSession } from '__mocks__';
 import { renderWithContext } from 'tools';
@@ -18,6 +18,8 @@ import { Identifiers, setIdentifierSource } from './id-field.component';
 import { ResourcesContextProvider } from '../../../resources-context';
 
 const mockUseConfig = vi.mocked(useConfig<RegistrationConfig>);
+const mockUseLayoutType = vi.mocked(useLayoutType);
+const mockIsDesktop = vi.mocked(isDesktop);
 
 const mockWorkspaceContextValue: WorkspaceContextProps = {
   activePanel: null,
@@ -91,10 +93,13 @@ function renderIdentifiers(
 
 describe('Identifiers component', () => {
   beforeEach(() => {
+    mockUseLayoutType.mockReturnValue('desktop' as any);
+    mockIsDesktop.mockReturnValue(true);
     mockUseConfig.mockReturnValue({
       ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
       defaultPatientIdentifierTypes: ['OpenMRS ID'],
     });
+    mockWorkspaceContextValue.activePanel = null;
     mockResourcesContextValue.identifierTypes = [];
   });
 
@@ -142,6 +147,31 @@ describe('Identifiers component', () => {
       await waitFor(() => {
         expect(mockWorkspaceContextValue.openPanel).toHaveBeenCalledWith('identifiers');
       });
+    });
+  });
+
+  describe('Identifier picker variant', () => {
+    it('shows the overlay picker on desktop in the classic layout', () => {
+      mockUseConfig.mockReturnValue({
+        ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+        defaultPatientIdentifierTypes: ['OpenMRS ID'],
+        layout: { variant: 'classic' },
+      });
+      mockWorkspaceContextValue.activePanel = 'identifiers';
+      mockResourcesContextValue.identifierTypes = mockIdentifierTypes;
+      renderIdentifiers();
+
+      // The classic layout renders the full-screen overlay in place of the
+      // docked workspace panel the form shell would provide.
+      expect(screen.getByRole('button', { name: 'Close overlay' })).toBeInTheDocument();
+    });
+
+    it('renders no overlay on desktop in the wide layout (docked shell owns the picker)', () => {
+      mockWorkspaceContextValue.activePanel = 'identifiers';
+      mockResourcesContextValue.identifierTypes = mockIdentifierTypes;
+      renderIdentifiers();
+
+      expect(screen.queryByRole('button', { name: 'Close overlay' })).not.toBeInTheDocument();
     });
   });
 });
