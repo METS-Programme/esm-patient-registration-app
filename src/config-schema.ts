@@ -70,6 +70,7 @@ export interface RegistrationConfig {
     };
     identifier: {
       allowPreferredSelection: boolean;
+      enableFingerprintCapture?: boolean;
     };
     phone: {
       personAttributeUuid: string;
@@ -371,6 +372,12 @@ export const esmPatientRegistrationSchema = {
         _default: false,
         _description:
           'Whether to display a "Preferred" option next to each identifier, allowing the user to choose which identifier is the preferred one. When disabled, the identifier of the primary identifier type is marked as preferred.',
+      },
+      enableFingerprintCapture: {
+        _type: Type.Boolean,
+        _default: false,
+        _description:
+          'Whether to display the fingerprint capture UI in the identifiers section. Requires a biometric capture integration to be functional; disabled by default.',
       },
     },
     phone: {

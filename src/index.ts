@@ -33,3 +33,23 @@ export const deleteIdentifierConfirmationModal = getAsyncLifecycle(
   () => import('./widgets/delete-identifier-confirmation.modal'),
   options,
 );
+
+export const confirmRegistryModal = getAsyncLifecycle(
+  () => import('./patient-verification/verification-modal/confirm-prompt.component'),
+  options,
+);
+
+export const emptyRegistryModal = getAsyncLifecycle(
+  () => import('./patient-verification/verification-modal/empty-prompt.component'),
+  options,
+);
+
+export const postToRegistryModal = getAsyncLifecycle(
+  () => import('./patient-verification/verification-modal/registry-prompt.component'),
+  options,
+);
+
+export const multiplePatientModal = getAsyncLifecycle(
+  () => import('./patient-verification/verification-modal/multiple-patient.component'),
+  options,
+);

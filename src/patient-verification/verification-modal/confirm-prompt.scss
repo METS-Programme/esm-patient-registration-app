@@ -1,0 +1,15 @@
+@use '@carbon/styles/scss/type';
+@use '@carbon/styles/scss/colors';
+
+.name {
+  font-weight: 600;
+}
+
+.tableHeaderContainer {
+  background-color: #80808021;
+  padding-bottom: 0.5rem;
+}
+
+.tableHeader {
+  @include type.type-style('heading-04');
+}

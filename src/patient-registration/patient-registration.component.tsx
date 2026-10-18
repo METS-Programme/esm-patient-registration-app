@@ -24,6 +24,8 @@ import { type CapturePhotoProps, type FormValues } from './patient-registration.
 import { type SavePatientForm, SavePatientTransactionManager } from './form-manager';
 import { useInitialFormValues, usePatientUuidMap } from './patient-registration-hooks';
 import BeforeSavePrompt from './before-save-prompt.component';
+import PatientVerification from '../patient-verification/patient-verification.component';
+import { type VerificationSearchParams } from '../patient-verification/verification-types';
 import styles from './patient-registration.scss';
 
 let exportedInitialFormValuesForTesting = {} as FormValues;
@@ -52,6 +54,10 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
 
   const [target, setTarget] = useState<undefined | string>();
   const [capturePhotoProps, setCapturePhotoProps] = useState<CapturePhotoProps | null>(null);
+  const [verificationSearchParams, setVerificationSearchParams] = useState<VerificationSearchParams>({
+    registry: '',
+    identifier: '',
+  });
 
   const location = currentSession?.sessionLocation?.uuid;
   const inEditMode = isLoadingPatientToEdit ? undefined : !!(uuidOfPatientToEdit && patientToEdit);
@@ -230,6 +236,11 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
             {/* Registration Form */}
             <div className={styles.infoGrid}>
               <PatientRegistrationContextProvider value={createContextValue(props)}>
+                <PatientVerification
+                  formProps={props}
+                  verificationParams={verificationSearchParams}
+                  setVerificationParams={setVerificationSearchParams}
+                />
                 {sections.map((section, index) => (
                   <SectionWrapper
                     key={`registration-section-${section.id}`}

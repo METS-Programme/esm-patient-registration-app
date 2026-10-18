@@ -14,6 +14,7 @@ import type {
 } from '../../patient-registration.types';
 import IdentifierInput from '../../input/custom-input/identifier/identifier-input.component';
 import IdentifierSelectionOverlay from './identifier-selection-overlay.component';
+import FingerPrintCapture from '../../input/custom-input/fingerprint-capture/fingerprint-capture.component';
 import styles from '../field.scss';
 
 export function setIdentifierSource(
@@ -66,8 +67,10 @@ export const Identifiers: React.FC = () => {
   const { t } = useTranslation();
   const layout = useLayoutType();
   const [showIdentifierOverlay, setShowIdentifierOverlay] = useState(false);
+  const [showFingerPrintOverlay, setShowFingerPrintOverlay] = useState(false);
   const config = useConfig<RegistrationConfig>();
   const { defaultPatientIdentifierTypes } = config;
+  const enableFingerprintCapture = config.fieldConfigurations?.identifier?.enableFingerprintCapture ?? false;
   // The Preferred option takes up room next to each identifier, so give long identifiers the full width
   const sectionClassName = config.fieldConfigurations?.identifier?.allowPreferredSelection
     ? undefined
@@ -139,10 +142,20 @@ export const Identifiers: React.FC = () => {
           </Button>
         </div>
       </UserHasAccess>
+      {enableFingerprintCapture && (
+        <Button
+          kind="ghost"
+          className={styles.configureIdentifiersButton}
+          onClick={() => setShowFingerPrintOverlay(true)}
+          size={isDesktop(layout) ? 'sm' : 'md'}>
+          {t('addFingerPrint', 'Add FingerPrint')}
+        </Button>
+      )}
       <div>
         {Object.entries(values.identifiers).map(([fieldName, identifier]) => (
           <IdentifierInput key={fieldName} fieldName={fieldName} patientIdentifier={identifier} />
         ))}
+        {showFingerPrintOverlay && <FingerPrintCapture closeOverlay={() => setShowFingerPrintOverlay(false)} />}
         {showIdentifierOverlay && (
           <IdentifierSelectionOverlay setFieldValue={setFieldValue} closeOverlay={closeIdentifierSelectionOverlay} />
         )}

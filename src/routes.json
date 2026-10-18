@@ -44,6 +44,22 @@
     {
       "name": "delete-identifier-confirmation-modal",
       "component": "deleteIdentifierConfirmationModal"
+    },
+    {
+      "name": "empty-registry-modal",
+      "component": "emptyRegistryModal"
+    },
+    {
+      "name": "confirm-registry-modal",
+      "component": "confirmRegistryModal"
+    },
+    {
+      "name": "post-to-registry-modal",
+      "component": "postToRegistryModal"
+    },
+    {
+      "name": "multiple-patient-modal",
+      "component": "multiplePatientModal"
     }
   ]
 }

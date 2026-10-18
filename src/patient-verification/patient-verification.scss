@@ -1,0 +1,68 @@
+@use '@carbon/colors';
+@use '@openmrs/esm-styleguide/src/vars' as *;
+
+.verificationWrapper {
+  margin: 0;
+  .layer {
+    flex: 1;
+  }
+}
+
+/* Desktop */
+:global(.omrs-breakpoint-gt-tablet) {
+  .verificationWrapper {
+    display: flex;
+    column-gap: 1rem;
+    align-items: flex-end;
+  }
+}
+
+/* Tablet */
+:global(.omrs-breakpoint-lt-desktop) {
+  .verificationWrapper {
+    row-gap: 0.5rem;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.errorWrapper {
+  color: colors.$red-50;
+  margin: 0 0 1rem 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.flexItem {
+  display: flex;
+  align-items: flex-end;
+  flex: 2;
+
+  :global(.cds--layer-two) {
+    margin-right: 1rem;
+  }
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.expandBtnSection {
+  margin: 1.5rem 0 1rem 0;
+  button {
+    padding: 0;
+    color: colors.$blue-70;
+    border: none;
+    background-color: colors.$cool-gray-10;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  button:hover {
+    color: colors.$blue-90;
+  }
+}
+
+.fieldInput {
+  outline: none;
+}
