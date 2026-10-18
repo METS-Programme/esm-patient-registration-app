@@ -4,4 +4,6 @@ export const personRelationshipRepresentation =
   'personB:(age,display,birthdate,uuid),' +
   'relationshipType:(uuid,display,description,aIsToB,bIsToA))';
 
-export const moduleName = '@openmrs/esm-patient-registration-app';
+// UgandaEMR module identity. Must match the package name and the key used for
+// this module in the deployed frontend config (config.json) and import map.
+export const moduleName = '@ugandaemr/esm-patient-registration-app';

@@ -53,6 +53,10 @@ verification dropdown). No frontend config keys are involved.
 ## Package rename
 
 The npm package is now `@ugandaemr/esm-patient-registration-app` (was
-`@openmrs/esm-patient-registration-app`). The built bundle filename is now
+`@openmrs/esm-patient-registration-app`), and the module name
+(`moduleName` in `src/constants.ts`) was aligned to match — so the module
+continues to read its config from the existing
+`"@ugandaemr/esm-patient-registration-app"` key in the deployed
+`config.json`. The built bundle filename is now
 `dist/esm-patient-registration-app.js` — update the import map entry in the
 frontend shell accordingly.
