@@ -210,73 +210,73 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
             <div
               className={classNames(styles.formContainer, dockedPanelOpen && styles.panelOpen)}
               ref={formContainerRef}>
-            {/* Navigation Sidebar */}
-            <div className={styles.stickyColumn}>
-              <h4>
-                {inEditMode
-                  ? t('editPatientDetails', 'Edit patient details')
-                  : t('createNewPatient', 'Create new patient')}
-              </h4>
-              {showDummyDataInput && <DummyDataInput setValues={props.setValues} />}
-              <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>
-              {sections.map((section) => (
-                <div className={classNames(styles.space05, styles.touchTarget)} key={section.name}>
-                  <Link
-                    className={classNames(styles.linkName, section.id === activeSection && styles.activeLink)}
-                    aria-current={section.id === activeSection ? 'true' : undefined}
-                    onClick={() => scrollIntoView(section.id)}>
-                    <XAxis size={16} /> {t(`${section.id}Section`, section.name)}
-                  </Link>
-                </div>
-              ))}
-              <hr className={styles.divider} />
-              <Button
-                className={styles.submitButton}
-                type="submit"
-                onClick={() => props.validateForm().then((errors) => displayErrors(errors))}
-                // Current session and identifiers are required for patient registration.
-                // If currentSession or identifierTypes are not available, then the
-                // user should be blocked to register the patient.
-                disabled={!currentSession || !identifierTypes || props.isSubmitting}>
-                {props.isSubmitting ? (
-                  <InlineLoading
-                    className={styles.spinner}
-                    description={`${t('submitting', 'Submitting')} ...`}
-                    iconDescription="submitting"
-                  />
-                ) : inEditMode ? (
-                  t('updatePatient', 'Update patient')
-                ) : (
-                  t('registerPatient', 'Register patient')
-                )}
-              </Button>
-              <Button className={styles.cancelButton} kind="secondary" onClick={cancelRegistration}>
-                {t('cancel', 'Cancel')}
-              </Button>
-            </div>
-            {/* Registration Form */}
-            <div className={styles.infoGrid}>
               <PatientRegistrationContextProvider value={createContextValue(props)}>
-                <PatientVerification
-                  formProps={props}
-                  verificationParams={verificationSearchParams}
-                  setVerificationParams={setVerificationSearchParams}
-                />
-                {sections.map((section, index) => (
-                  <SectionWrapper
-                    key={`registration-section-${section.id}`}
-                    sectionDefinition={section}
-                    index={index}
+                {/* Navigation Sidebar */}
+                <div className={styles.stickyColumn}>
+                  <h4>
+                    {inEditMode
+                      ? t('editPatientDetails', 'Edit patient details')
+                      : t('createNewPatient', 'Create new patient')}
+                  </h4>
+                  {showDummyDataInput && <DummyDataInput setValues={props.setValues} />}
+                  <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>
+                  {sections.map((section) => (
+                    <div className={classNames(styles.space05, styles.touchTarget)} key={section.name}>
+                      <Link
+                        className={classNames(styles.linkName, section.id === activeSection && styles.activeLink)}
+                        aria-current={section.id === activeSection ? 'true' : undefined}
+                        onClick={() => scrollIntoView(section.id)}>
+                        <XAxis size={16} /> {t(`${section.id}Section`, section.name)}
+                      </Link>
+                    </div>
+                  ))}
+                  <hr className={styles.divider} />
+                  <Button
+                    className={styles.submitButton}
+                    type="submit"
+                    onClick={() => props.validateForm().then((errors) => displayErrors(errors))}
+                    // Current session and identifiers are required for patient registration.
+                    // If currentSession or identifierTypes are not available, then the
+                    // user should be blocked to register the patient.
+                    disabled={!currentSession || !identifierTypes || props.isSubmitting}>
+                    {props.isSubmitting ? (
+                      <InlineLoading
+                        className={styles.spinner}
+                        description={`${t('submitting', 'Submitting')} ...`}
+                        iconDescription="submitting"
+                      />
+                    ) : inEditMode ? (
+                      t('updatePatient', 'Update patient')
+                    ) : (
+                      t('registerPatient', 'Register patient')
+                    )}
+                  </Button>
+                  <Button className={styles.cancelButton} kind="secondary" onClick={cancelRegistration}>
+                    {t('cancel', 'Cancel')}
+                  </Button>
+                </div>
+                {/* Registration Form */}
+                <div className={styles.infoGrid}>
+                  <PatientVerification
+                    formProps={props}
+                    verificationParams={verificationSearchParams}
+                    setVerificationParams={setVerificationSearchParams}
                   />
-                ))}
+                  {sections.map((section, index) => (
+                    <SectionWrapper
+                      key={`registration-section-${section.id}`}
+                      sectionDefinition={section}
+                      index={index}
+                    />
+                  ))}
+                </div>
+                {/* Docked workspace panel (wide layout, desktop): shrinks the form
+                    instead of overlaying it. */}
+                {dockedPanelOpen && (
+                  <WorkspaceIdentifierPanel setFieldValue={props.setFieldValue} closeOverlay={workspace.closePanel} />
+                )}
               </PatientRegistrationContextProvider>
             </div>
-            {/* Docked workspace panel (wide layout, desktop): shrinks the form
-                instead of overlaying it. */}
-            {dockedPanelOpen && (
-              <WorkspaceIdentifierPanel setFieldValue={props.setFieldValue} closeOverlay={workspace.closePanel} />
-            )}
-          </div>
           </Form>
         </WorkspaceContextProvider>
       )}
