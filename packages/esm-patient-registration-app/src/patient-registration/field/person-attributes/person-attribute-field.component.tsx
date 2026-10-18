@@ -46,7 +46,7 @@ export function PersonAttributeField({ fieldDefinition }: PersonAttributeFieldPr
           </InlineNotification>
         );
     }
-  }, [personAttributeType, fieldDefinition, t]);
+  }, [personAttributeType, fieldDefinition]);
 
   if (isLoading) {
     return (

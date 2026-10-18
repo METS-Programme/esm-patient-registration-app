@@ -1,6 +1,6 @@
 import React from 'react';
 import { screen, render, fireEvent } from '@testing-library/react';
-import CancelPatientEdit from './cancel-patient-edit.component';
+import CancelPatientEdit from './cancel-patient-edit.modal';
 
 describe('CancelPatientEdit component', () => {
   const mockClose = jest.fn();

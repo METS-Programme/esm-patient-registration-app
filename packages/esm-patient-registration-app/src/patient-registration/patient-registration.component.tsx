@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button, Link } from '@carbon/react';
 import { XAxis } from '@carbon/react/icons';
 import { useLocation, useParams } from 'react-router-dom';
@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Formik, Form, FormikHelpers } from 'formik';
 import {
   createErrorHandler,
-  showToast,
+  showSnackbar,
   useConfig,
   interpolateUrl,
   usePatient,
@@ -20,10 +20,10 @@ import { usePatientPhoto } from './patient-registration.resource';
 import { DummyDataInput } from './input/dummy-data/dummy-data-input.component';
 import { cancelRegistration, filterUndefinedPatientIdenfier, scrollIntoView } from './patient-registration-utils';
 import { useInitialAddressFieldValues, useInitialFormValues, usePatientUuidMap } from './patient-registration-hooks';
-import { ResourcesContext } from '../offline.resources';
+import { useResourcesContext } from '../resources-context';
 import { builtInSections, RegistrationConfig, SectionDefinition } from '../config-schema';
 import { SectionWrapper } from './section/section-wrapper.component';
-import BeforeSavePrompt from './before-save-prompt';
+import BeforeSavePrompt from './before-save-prompt.component';
 import styles from './patient-registration.scss';
 import PatientVerification from '../patient-verification/patient-verification.component';
 import { handleSavePatientToRegistry } from '../patient-verification/patient-verification-hook';
@@ -36,7 +36,7 @@ export interface PatientRegistrationProps {
 }
 
 export const PatientRegistration: React.FC<PatientRegistrationProps> = ({ savePatientForm, isOffline }) => {
-  const { currentSession, addressTemplate, identifierTypes } = useContext(ResourcesContext);
+  const { currentSession, addressTemplate, identifierTypes } = useResourcesContext();
   const { search } = useLocation();
   const config = useConfig() as RegistrationConfig;
   const [target, setTarget] = useState<undefined | string>();
@@ -107,8 +107,8 @@ export const PatientRegistration: React.FC<PatientRegistrationProps> = ({ savePa
         abortController,
       );
 
-      showToast({
-        description: inEditMode
+      showSnackbar({
+        subtitle: inEditMode
           ? t('updationSuccessToastDescription', "The patient's information has been successfully updated")
           : t(
               'registrationSuccessToastDescription',
@@ -127,10 +127,10 @@ export const PatientRegistration: React.FC<PatientRegistrationProps> = ({ savePa
     } catch (error) {
       if (error.responseBody?.error?.globalErrors) {
         error.responseBody.error.globalErrors.forEach((error) => {
-          showToast({ description: error.message });
+          showSnackbar({ title: error.message, kind: 'error' });
         });
       } else if (error.responseBody?.error?.message) {
-        showToast({ description: error.responseBody.error.message });
+        showSnackbar({ title: error.responseBody.error.message, kind: 'error' });
       } else {
         createErrorHandler()(error);
       }
@@ -154,8 +154,7 @@ export const PatientRegistration: React.FC<PatientRegistrationProps> = ({ savePa
 
   const displayErrors = (errors) => {
     if (errors && typeof errors === 'object' && !!Object.keys(errors).length) {
-      showToast({
-        description: getDescription(errors),
+      showSnackbar({
         title: t('incompleteForm', 'Incomplete form'),
         kind: 'warning',
       });

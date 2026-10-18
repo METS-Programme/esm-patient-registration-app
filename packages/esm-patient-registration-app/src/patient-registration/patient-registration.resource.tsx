@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import useSWR from 'swr';
 import useSWRImmutable from 'swr/immutable';
+import dayjs from 'dayjs';
 import { FetchResponse, openmrsFetch, useConfig } from '@openmrs/esm-framework';
 import { Patient, Relationship, PatientIdentifier, Encounter } from './patient-registration.types';
 
@@ -222,4 +223,11 @@ export async function deletePatientIdentifier(patientUuid: string, patientIdenti
     },
     signal: abortController.signal,
   });
+}
+
+export function getDatetime(date: Date | string, time: string, timeFormat: 'AM' | 'PM') {
+  const datetime = new Date(date);
+  const [hours, minutes] = time.split(':').map(Number);
+  const fullHours = timeFormat === 'PM' ? (hours % 12) + 12 : hours % 12;
+  return dayjs(datetime).hour(fullHours).minute(minutes).second(0).millisecond(0).toDate();
 }

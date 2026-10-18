@@ -36,12 +36,9 @@ export const editPatient = getAsyncLifecycle(() => import('./root.component'), {
   moduleName,
 });
 
-export const addPatientLink = getAsyncLifecycle(() => import('./add-patient-link'), options);
+export const addPatientLink = getAsyncLifecycle(() => import('./add-patient-link.extension'), options);
 
-export const cancelPatientEditModal = getAsyncLifecycle(
-  () => import('./widgets/cancel-patient-edit.component'),
-  options,
-);
+export const cancelPatientEditModal = getAsyncLifecycle(() => import('./widgets/cancel-patient-edit.modal'), options);
 
 export const patientPhoto = getAsyncLifecycle(() => import('./widgets/display-photo.component'), options);
 
@@ -54,7 +51,7 @@ export const editPatientDetailsButton = getAsyncLifecycle(
 );
 
 export const deleteIdentifierConfirmationModal = getAsyncLifecycle(
-  () => import('./widgets/delete-identifier-confirmation-modal'),
+  () => import('./widgets/delete-identifier-confirmation.modal'),
   options,
 );
 

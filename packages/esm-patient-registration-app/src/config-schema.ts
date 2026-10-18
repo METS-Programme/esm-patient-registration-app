@@ -59,6 +59,18 @@ export interface RegistrationConfig {
         month: number;
       };
     };
+    phone: {
+      personAttributeUuid: string;
+      validation: {
+        required: boolean;
+        matches: string;
+      };
+    };
+    causeOfDeath: {
+      conceptUuid: string;
+      required: boolean;
+      freeTextFieldConceptUuid: string;
+    };
   };
   links: {
     submitButton: string;
@@ -81,11 +93,24 @@ export const builtInSections: Array<SectionDefinition> = [
     fields: ['name', 'gender', 'dob', 'id'],
   },
   { id: 'contact', name: 'Contact Details', fields: ['address', 'phone'] },
-  { id: 'death', name: 'Death Info', fields: [] },
+  {
+    id: 'death',
+    name: 'Death Info',
+    fields: ['dateAndTimeOfDeath', 'causeOfDeath'],
+  },
   { id: 'relationships', name: 'Relationships', fields: [] },
 ];
 
-export const builtInFields = ['name', 'gender', 'dob', 'address', 'id', 'phone & email'] as const;
+export const builtInFields = [
+  'name',
+  'gender',
+  'dob',
+  'address',
+  'id',
+  'phone',
+  'causeOfDeath',
+  'dateAndTimeOfDeath',
+] as const;
 
 export const esmPatientRegistrationSchema = {
   sections: {
@@ -308,6 +333,40 @@ export const esmPatientRegistrationSchema = {
           _description: 'The custom month to use on the estimated date of birth i.e 0 = Jan & 11 = Dec',
           _default: 0,
         },
+      },
+    },
+    phone: {
+      personAttributeUuid: {
+        _type: Type.String,
+        _default: '',
+        _description: 'The person attribute type UUID for the phone number field.',
+      },
+      validation: {
+        required: {
+          _type: Type.Boolean,
+          _default: false,
+          _description: 'Whether the phone number field is required.',
+        },
+        matches: {
+          _type: Type.String,
+          _default: '',
+          _description: 'Optional RegEx for testing the validity of the phone number input.',
+        },
+      },
+    },
+    causeOfDeath: {
+      conceptUuid: {
+        _type: Type.ConceptUuid,
+        _description: 'The concept UUID for the cause of death field.',
+      },
+      required: {
+        _type: Type.Boolean,
+        _default: false,
+        _description: 'Whether the cause of death field is required when the patient is marked as deceased.',
+      },
+      freeTextFieldConceptUuid: {
+        _type: Type.ConceptUuid,
+        _description: 'The concept UUID for the free text field in cause of death (for non-coded causes).',
       },
     },
   },

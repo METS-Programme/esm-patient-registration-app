@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { Grid, Row } from '@carbon/react';
-import { ExtensionSlot, useConnectivity, useSession } from '@openmrs/esm-framework';
+import { Grid } from '@carbon/react';
+import { useConnectivity, useSession } from '@openmrs/esm-framework';
 import {
-  ResourcesContext,
   fetchAddressTemplate,
   fetchAllRelationshipTypes,
   fetchPatientIdentifierTypesWithSources,
 } from './offline.resources';
+import { ResourcesContextProvider } from './resources-context';
 import { FormManager } from './patient-registration/form-manager';
 import { PatientRegistration } from './patient-registration/patient-registration.component';
 import useSWRImmutable from 'swr/immutable';
@@ -33,17 +33,14 @@ export default function Root() {
   return (
     <main className={`omrs-main-content ${styles.root}`}>
       <Grid className={styles.grid}>
-        <Row>
-          <ExtensionSlot name="breadcrumbs-slot" />
-        </Row>
-        <ResourcesContext.Provider
+        <ResourcesContextProvider
           value={{
             addressTemplate,
             relationshipTypes,
             identifierTypes,
             currentSession,
           }}>
-          <BrowserRouter basename={`${window['getOpenmrsSpaBase']()}`}>
+          <BrowserRouter basename={`${window.getOpenmrsSpaBase()}`}>
             <Routes>
               <Route
                 path="patient-registration"
@@ -55,7 +52,7 @@ export default function Root() {
               />
             </Routes>
           </BrowserRouter>
-        </ResourcesContext.Provider>
+        </ResourcesContextProvider>
       </Grid>
     </main>
   );

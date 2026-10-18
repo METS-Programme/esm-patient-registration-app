@@ -42,41 +42,48 @@ const PatientIdentifierOverlay: React.FC<PatientIdentifierOverlayProps> = ({ clo
 
   const filteredIdentifiers = useMemo(
     () => identifierTypes?.filter((identifier) => identifier?.name?.toLowerCase().includes(searchString.toLowerCase())),
-    [unsavedIdentifierTypes, searchString],
+    [identifierTypes, searchString],
   );
 
-  const handleCheckingIdentifier = (identifierType: PatientIdentifierType, checked: boolean) =>
-    setUnsavedIdentifierTypes((unsavedIdentifierTypes) => {
-      if (checked) {
-        return {
-          ...unsavedIdentifierTypes,
-          [identifierType.fieldName]: initializeIdentifier(
-            identifierType,
-            values.identifiers[identifierType.fieldName] ??
-              initialFormValues.identifiers[identifierType.fieldName] ??
-              {},
+  const handleCheckingIdentifier = useCallback(
+    (identifierType: PatientIdentifierType, checked: boolean) =>
+      setUnsavedIdentifierTypes((unsavedIdentifierTypes) => {
+        if (checked) {
+          return {
+            ...unsavedIdentifierTypes,
+            [identifierType.fieldName]: initializeIdentifier(
+              identifierType,
+              values.identifiers[identifierType.fieldName] ??
+                initialFormValues.identifiers[identifierType.fieldName] ??
+                {},
+            ),
+          };
+        }
+        if (unsavedIdentifierTypes[identifierType.fieldName]) {
+          return Object.fromEntries(
+            Object.entries(unsavedIdentifierTypes).filter(([fieldName]) => fieldName !== identifierType.fieldName),
+          );
+        }
+        return unsavedIdentifierTypes;
+      }),
+    [values.identifiers, initialFormValues.identifiers],
+  );
+
+  const handleSelectingIdentifierSource = useCallback(
+    (identifierType: PatientIdentifierType, sourceUuid) =>
+      setUnsavedIdentifierTypes((unsavedIdentifierTypes) => ({
+        ...unsavedIdentifierTypes,
+        [identifierType.fieldName]: {
+          ...unsavedIdentifierTypes[identifierType.fieldName],
+          ...setIdentifierSource(
+            identifierType.identifierSources.find((source) => source.uuid === sourceUuid),
+            unsavedIdentifierTypes[identifierType.fieldName].identifierValue,
+            unsavedIdentifierTypes[identifierType.fieldName].initialValue,
           ),
-        };
-      }
-      if (unsavedIdentifierTypes[identifierType.fieldName]) {
-        return Object.fromEntries(
-          Object.entries(unsavedIdentifierTypes).filter(([fieldName]) => fieldName !== identifierType.fieldName),
-        );
-      }
-      return unsavedIdentifierTypes;
-    });
-  const handleSelectingIdentifierSource = (identifierType: PatientIdentifierType, sourceUuid) =>
-    setUnsavedIdentifierTypes((unsavedIdentifierTypes) => ({
-      ...unsavedIdentifierTypes,
-      [identifierType.fieldName]: {
-        ...unsavedIdentifierTypes[identifierType.fieldName],
-        ...setIdentifierSource(
-          identifierType.identifierSources.find((source) => source.uuid === sourceUuid),
-          unsavedIdentifierTypes[identifierType.fieldName].identifierValue,
-          unsavedIdentifierTypes[identifierType.fieldName].initialValue,
-        ),
-      },
-    }));
+        },
+      })),
+    [],
+  );
 
   const identifierTypeFields = useMemo(
     () =>
@@ -103,11 +110,11 @@ const PatientIdentifierOverlay: React.FC<PatientIdentifierOverlayProps> = ({ clo
             />
             {patientIdentifier &&
               identifierType?.identifierSources?.length > 0 &&
-              /* 
+              /*
                 This check are for the cases when there's an initialValue identifier is assigned
                 to the patient
                 The corresponding flow is like:
-                1. If there's no change to the actual initial identifier, then the source remains null, 
+                1. If there's no change to the actual initial identifier, then the source remains null,
                 hence the list of the identifier sources shouldn't be displayed.
                 2. If user wants to edit the patient identifier's value, hence there will be an initialValue,
                 along with a source assigned to itself(only if the identifierType has sources, else there's nothing to worry about), which by
@@ -148,13 +155,15 @@ const PatientIdentifierOverlay: React.FC<PatientIdentifierOverlayProps> = ({ clo
       values.identifiers,
       isOffline,
       handleCheckingIdentifier,
+      handleSelectingIdentifierSource,
+      t,
     ],
   );
 
   const handleConfiguringIdentifiers = useCallback(() => {
     setFieldValue('identifiers', unsavedIdentifierTypes);
     closeOverlay();
-  }, [unsavedIdentifierTypes, setFieldValue]);
+  }, [unsavedIdentifierTypes, setFieldValue, closeOverlay]);
 
   return (
     <Overlay

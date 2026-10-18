@@ -7,6 +7,9 @@ import { reportError, useConfig } from '@openmrs/esm-framework';
 import { builtInFields, RegistrationConfig } from '../../config-schema';
 import { CustomField } from './custom-field.component';
 import { AddressComponent } from './address/address-field.component';
+import { PhoneField } from './phone/phone-field.component';
+import { CauseOfDeathField } from './cause-of-death/cause-of-death.component';
+import { DateAndTimeOfDeathField } from './date-and-time-of-death/date-and-time-of-death.component';
 
 export interface FieldProps {
   name: string;
@@ -38,6 +41,12 @@ export function Field({ name }: FieldProps) {
       return <AddressComponent />;
     case 'id':
       return <Identifiers />;
+    case 'phone':
+      return <PhoneField />;
+    case 'causeOfDeath':
+      return <CauseOfDeathField />;
+    case 'dateAndTimeOfDeath':
+      return <DateAndTimeOfDeathField />;
     default:
       return <CustomField name={name} />;
   }

@@ -89,7 +89,7 @@ export function useInitialFormValues(patientUuid: string): [FormValues, Dispatch
         setInitialFormValues(registration._patientRegistrationData.formValues);
       }
     })();
-  }, [isLoadingPatientToEdit, patientToEdit, patientUuid]);
+  }, [isLoadingPatientToEdit, patientToEdit, patientUuid, initialFormValues]);
 
   // Setting authentication token
 
@@ -143,7 +143,7 @@ export function useInitialFormValues(patientUuid: string): [FormValues, Dispatch
     if (!isLoadingObs) {
       setInitialFormValues((initialFormValues) => ({ ...initialFormValues, obs: obs, observation: observations }));
     }
-  }, [isLoadingObs]);
+  }, [isLoadingObs, obs, observations]);
 
   return [initialFormValues, setInitialFormValues];
 }
@@ -164,7 +164,7 @@ export function useInitialAddressFieldValues(patientUuid: string, fallback = {})
         setInitialAddressFieldValues(registration?._patientRegistrationData.initialAddressFieldValues ?? fallback);
       }
     })();
-  }, [isLoading, patient, patientUuid]);
+  }, [fallback, initialAddressFieldValues, isLoading, patient, patientUuid]);
 
   return [initialAddressFieldValues, setInitialAddressFieldValues];
 }
@@ -185,7 +185,7 @@ export function usePatientUuidMap(
         setPatientUuidMap(registration?._patientRegistrationData.initialAddressFieldValues ?? fallback),
       );
     }
-  }, [isLoadingPatientToEdit, patientToEdit, patientUuid]);
+  }, [fallback, patientUuidMap, isLoadingPatientToEdit, patientToEdit, patientUuid]);
 
   useEffect(() => {
     if (attributes) {
@@ -240,7 +240,7 @@ export function useInitialPatientIdentifiers(patientUuid: string): {
       data: identifiers,
       isLoading,
     };
-  }, [data, error]);
+  }, [data, isLoading]);
 
   return result;
 }
@@ -274,7 +274,7 @@ function useInitialPersonAttributes(personUuid: string) {
       data: data?.data?.results,
       isLoading,
     };
-  }, [data, error]);
+  }, [data, isLoading]);
   return result;
 }
 
