@@ -182,10 +182,6 @@
 // The threshold matches the two-column breakpoint in generic-section.scss —
 // 34rem keeps two-up layouts alive when the docked identifier panel is open.
 @container workspaceForm (max-width: 34rem) {
-  .halfWidthInDesktopView {
-    width: 100%;
-  }
-
   .grid {
     grid-template-columns: 1fr;
   }
@@ -194,5 +190,14 @@
   .photoExtension {
     grid-row: auto;
     grid-column: 1;
+  }
+}
+
+// In the wide layout every field lives in its own card slot, so the slot —
+// not these legacy half-width wrappers — decides the width. Classic has no
+// such container and keeps the wrapped 50% behavior.
+@container workspaceForm (min-width: 0px) {
+  .halfWidthInDesktopView {
+    width: 100%;
   }
 }

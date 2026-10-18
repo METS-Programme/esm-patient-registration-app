@@ -8,11 +8,8 @@ export interface DemographicsSectionProps {
   fields: Array<string>;
 }
 
-// The name field renders its own names/photo grid and the identifiers card
-// needs the room, so both span the full row; gender and date of birth pair
-// up in the two-column flow.
-const fullWidthFields: ReadonlyArray<string> = ['name', 'id'];
-
+// Every field is a half-width card, so the section flows as paired cards
+// (name | gender, date of birth | identifiers) like the reference design.
 export const DemographicsSection: React.FC<DemographicsSectionProps> = ({ fields }) => {
   const [field, meta] = useField('addNameInLocalLanguage');
   const { setFieldValue } = usePatientRegistrationContext();
@@ -25,5 +22,5 @@ export const DemographicsSection: React.FC<DemographicsSectionProps> = ({ fields
     }
   }, [field.value, meta.touched, setFieldValue]);
 
-  return <SectionGrid aria-label="Demographics Section" fields={fields} fullWidthFields={fullWidthFields} />;
+  return <SectionGrid aria-label="Demographics Section" fields={fields} />;
 };

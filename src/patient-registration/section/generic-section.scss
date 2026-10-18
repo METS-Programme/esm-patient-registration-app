@@ -9,10 +9,17 @@
   display: grid;
   grid-template-columns: 1fr;
   align-items: start;
+  row-gap: layout.$spacing-05;
 }
 
+// Each field is its own card, so a section reads as a group of cards
+// (Patient name / Demographics / …) rather than one bordered box.
 .fieldSlot {
   min-width: 0;
+  padding: layout.$spacing-05;
+  background-color: $ui-02;
+  border: 1px solid $ui-03;
+  border-radius: 4px;
 }
 
 .fieldSlotFull {
