@@ -1,8 +1,6 @@
 import React from 'react';
-import classNames from 'classnames';
 import { type SectionDefinition } from '../../config-schema';
-import { Field } from '../field/field.component';
-import styles from './generic-section.scss';
+import { SectionGrid } from './section-grid.component';
 
 export interface GenericSectionProps {
   sectionDefinition: SectionDefinition;
@@ -14,14 +12,10 @@ const fullWidthFields: ReadonlyArray<string> = ['address', 'id'];
 
 export const GenericSection = ({ sectionDefinition }: GenericSectionProps) => {
   return (
-    <section aria-label={`${sectionDefinition.name} Section`} className={styles.fieldsGrid}>
-      {sectionDefinition.fields.map((name) => (
-        <div
-          key={`${sectionDefinition.name}-${name}`}
-          className={classNames(styles.fieldSlot, fullWidthFields.includes(name) && styles.fieldSlotFull)}>
-          <Field name={name} />
-        </div>
-      ))}
-    </section>
+    <SectionGrid
+      aria-label={`${sectionDefinition.name} Section`}
+      fields={sectionDefinition.fields}
+      fullWidthFields={fullWidthFields}
+    />
   );
 };
