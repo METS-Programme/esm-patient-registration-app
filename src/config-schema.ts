@@ -4,6 +4,7 @@ import _default from 'yup/lib/locale';
 export interface SectionDefinition {
   id: string;
   name?: string;
+  description?: string;
   fields: Array<string>;
 }
 
@@ -104,11 +105,27 @@ export const builtInSections: Array<SectionDefinition> = [
   {
     id: 'demographics',
     name: 'Basic Info',
+    description: 'Name, sex, birth date',
     fields: ['name', 'gender', 'dob', 'id'],
   },
-  { id: 'contact', name: 'Contact Details', fields: ['address', 'phone'] },
-  { id: 'death', name: 'Death Info', fields: ['dateAndTimeOfDeath', 'causeOfDeath'] },
-  { id: 'relationships', name: 'Relationships', fields: [] },
+  {
+    id: 'contact',
+    name: 'Contact Details',
+    description: 'Address, phone, contact info',
+    fields: ['address', 'phone'],
+  },
+  {
+    id: 'death',
+    name: 'Death Info',
+    description: 'Death date and cause',
+    fields: ['dateAndTimeOfDeath', 'causeOfDeath'],
+  },
+  {
+    id: 'relationships',
+    name: 'Relationships',
+    description: 'Guardians, caregivers',
+    fields: [],
+  },
 ];
 
 // These fields are handled specially in field.component.tsx
@@ -147,6 +164,11 @@ export const esmPatientRegistrationSchema = {
       name: {
         _type: Type.String,
         _description: 'The title to display at the top of the section.',
+      },
+      description: {
+        _type: Type.String,
+        _description:
+          'An optional short caption shown under the section title in the section navigator. Built-in sections have default descriptions.',
       },
       fields: {
         _type: Type.Array,
