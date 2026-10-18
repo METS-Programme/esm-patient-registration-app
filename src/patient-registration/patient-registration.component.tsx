@@ -205,7 +205,7 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
       validationSchema={validationSchema}>
       {(props) => (
         <WorkspaceContextProvider value={workspace}>
-          <Form className={classNames(styles.form, layoutVariant === 'wide' && styles.wideWorkspace)}>
+          <Form className={classNames(layoutVariant === 'wide' && styles.wideWorkspace)}>
             <BeforeSavePrompt when={Object.keys(props.touched).length > 0} redirect={target} />
             <div
               className={classNames(styles.formContainer, dockedPanelOpen && styles.panelOpen)}

@@ -13,6 +13,9 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   overflow: hidden;
+  // The panel pushes the form column instead of overlaying it; animate the
+  // push so the workspace visibly reorganizes rather than snapping.
+  transition: width 150ms ease;
 }
 
 .panelHeader {

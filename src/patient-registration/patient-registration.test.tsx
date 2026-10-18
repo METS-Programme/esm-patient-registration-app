@@ -12,8 +12,10 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import {
   type FetchResponse,
   getDefaultsFromConfigSchema,
+  isDesktop,
   showSnackbar,
   useConfig,
+  useLayoutType,
   usePatient,
 } from '@openmrs/esm-framework';
 import type { AddressTemplate, Encounter, FormValues } from './patient-registration.types';
@@ -33,6 +35,8 @@ const mockUseConfig = vi.mocked(useConfig<RegistrationConfig>);
 const mockUsePatient = vi.mocked(usePatient);
 const mockUseParams = vi.mocked(useParams);
 const mockUseInitialFormValues = vi.mocked(useInitialFormValues);
+const mockUseLayoutType = vi.mocked(useLayoutType);
+const mockIsDesktop = vi.mocked(isDesktop);
 
 vi.mock('./field/field.resource', () => ({
   useConcept: vi.fn().mockImplementation((uuid: string) => {
@@ -555,6 +559,54 @@ describe('Registering a new patient', () => {
     expect(mockSaveEncounter).toHaveBeenCalledTimes(2);
 
     expect(mockShowSnackbar).toHaveBeenCalledWith(expect.objectContaining({ kind: 'success' }));
+  });
+});
+
+describe('Docked identifier panel', () => {
+  beforeEach(() => {
+    mockUseLayoutType.mockReturnValue('desktop' as any);
+    mockIsDesktop.mockReturnValue(true);
+    mockUseConfig.mockReturnValue({
+      ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+      ...mockOpenmrsConfig,
+      // Include the identifiers field so the Configure action is available.
+      sectionDefinitions: [
+        { id: 'demographics', name: 'Demographics', fields: ['name', 'gender', 'dob', 'id'] },
+        { id: 'contact', name: 'Contact Info', fields: ['address'] },
+      ],
+    });
+  });
+
+  it('docks the identifier panel in its own region and closes it on cancel', async () => {
+    const user = userEvent.setup();
+    renderWithContext(<PatientRegistration savePatientForm={vi.fn()} />, ResourcesContextProvider, {
+      ...mockResourcesContextValue,
+      identifierTypes: [
+        {
+          uuid: 'ssn-uuid',
+          name: 'SSN',
+          fieldName: 'ssn',
+          format: null,
+          formatDescription: null,
+          isPrimary: false,
+          required: false,
+          uniquenessBehavior: null,
+          identifierSources: [],
+        },
+      ],
+    });
+
+    await screen.findByRole('heading', { name: /create new patient/i });
+
+    await user.click(await screen.findByRole('button', { name: /configure/i }));
+
+    // The panel consumes the registration context, so this only renders if
+    // the context provider wraps the docked panel inside the form shell.
+    const panel = screen.getByRole('complementary', { name: /configure identifiers/i });
+    expect(within(panel).getByRole('checkbox', { name: 'SSN' })).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole('button', { name: /cancel/i }));
+    expect(screen.queryByRole('complementary', { name: /configure identifiers/i })).not.toBeInTheDocument();
   });
 });
 

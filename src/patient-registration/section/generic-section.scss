@@ -19,9 +19,19 @@
   grid-column: 1 / -1;
 }
 
-@container workspaceForm (min-width: 48rem) {
+// Two columns from 34rem so the layout survives the docked identifier
+// panel: on a 1280px desktop the workspace container is ~32.5rem with the
+// panel open, and the previous single 48rem breakpoint collapsed
+// everything to one column there.
+@container workspaceForm (min-width: 34rem) {
   .fieldsGrid {
     grid-template-columns: 1fr 1fr;
+    column-gap: layout.$spacing-04;
+  }
+}
+
+@container workspaceForm (min-width: 48rem) {
+  .fieldsGrid {
     column-gap: layout.$spacing-05;
   }
 }

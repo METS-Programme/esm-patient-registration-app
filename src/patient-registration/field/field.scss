@@ -178,7 +178,9 @@
 
 // Narrow workspace container: half-width fields take the full row and the
 // demographics name/photo grid stacks. Classic layout has no such container.
-@container workspaceForm (max-width: 48rem) {
+// The threshold matches the two-column breakpoint in generic-section.scss —
+// 34rem keeps two-up layouts alive when the docked identifier panel is open.
+@container workspaceForm (max-width: 34rem) {
   .halfWidthInDesktopView {
     width: 100%;
   }

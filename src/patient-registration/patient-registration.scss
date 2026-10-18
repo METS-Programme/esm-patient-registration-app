@@ -23,7 +23,7 @@
 
 .infoGrid {
   width: 100%;
-  padding-left: layout.$spacing-07;
+  padding-inline: layout.$spacing-07;
   margin-bottom: 40vh;
   margin-top: layout.$spacing-05;
   max-width: 50rem;
@@ -79,15 +79,17 @@
 // classic layout keeps the plain sticky link list above.
 .wideWorkspace {
   .infoGrid {
-    max-width: none;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: layout.$spacing-07;
     container-type: inline-size;
     container-name: workspaceForm;
   }
 
-  @media (min-width: 75rem) {
-    .infoGrid {
-      padding-right: layout.$spacing-07;
-    }
+  // Panel open: the docked panel takes its own region, so tighten the
+  // form gutter rather than letting the content run edge to edge.
+  .panelOpen .infoGrid {
+    padding-inline: layout.$spacing-05;
   }
 
   .stickyColumn {
@@ -224,10 +226,5 @@ html[dir='rtl'] {
     & > svg {
       transform: scale(-1, 1);
     }
-  }
-
-  .infoGrid {
-    padding-left: unset;
-    padding-right: layout.$spacing-07;
   }
 }
