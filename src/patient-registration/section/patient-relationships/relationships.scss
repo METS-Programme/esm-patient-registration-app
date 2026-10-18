@@ -33,3 +33,9 @@
     justify-content: space-between;
   }
 }
+
+.emptyState {
+  @include type.type-style('body-01');
+  margin: 0;
+  color: $text-02;
+}

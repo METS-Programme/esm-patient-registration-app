@@ -7,6 +7,7 @@ import { type Resources } from '../../../registration.resource';
 import { type FormValues } from '../../patient-registration.types';
 import { PatientRegistrationContextProvider } from '../../patient-registration-context';
 import { RelationshipsSection } from './relationships-section.component';
+import { AddRelationshipButton } from './add-relationship-button.component';
 import { ResourcesContextProvider } from '../../../resources-context';
 import { renderWithContext } from 'tools';
 import { initialFormValues } from '../../patient-registration.component';
@@ -70,6 +71,9 @@ function renderRelationshipsSectionWithFormik(
                 currentPhoto: '',
                 initialFormValues: formValuesRef,
               }}>
+              {/* The real composition renders AddRelationshipButton in the
+                  section heading row, outside the section body. */}
+              <AddRelationshipButton />
               <RelationshipsSection />
             </PatientRegistrationContextProvider>
           </Form>
@@ -116,7 +120,6 @@ describe('RelationshipsSection', () => {
 
       expect(screen.getByLabelText(/loading relationships section/i)).toBeInTheDocument();
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
-      expect(screen.queryByText(/add relationship/i)).not.toBeInTheDocument();
     });
   });
 
@@ -137,6 +140,7 @@ describe('RelationshipsSection', () => {
 
       expect(screen.getByLabelText(/relationships section/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /add relationship/i })).toBeInTheDocument();
+      expect(screen.getByText(/no relationships added yet/i)).toBeInTheDocument();
     });
 
     it('renders existing relationships', () => {

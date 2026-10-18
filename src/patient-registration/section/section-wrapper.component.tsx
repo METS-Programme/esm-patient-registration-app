@@ -3,12 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { type SectionDefinition } from '../../config-schema';
 import { Section } from './section.component';
 import { SectionHeading } from './section-heading.component';
+import { AddRelationshipButton } from './patient-relationships/add-relationship-button.component';
 import styles from './section.scss';
 
 export interface SectionWrapperProps {
   sectionDefinition: SectionDefinition;
   index: number;
 }
+
+const sectionActions: Record<string, React.ReactNode> = {
+  relationships: <AddRelationshipButton />,
+};
 
 export const SectionWrapper = ({ sectionDefinition, index }: SectionWrapperProps) => {
   const { t } = useTranslation();
@@ -24,7 +29,11 @@ export const SectionWrapper = ({ sectionDefinition, index }: SectionWrapperProps
    */
   return (
     <div id={sectionDefinition.id} className={styles.section}>
-      <SectionHeading index={index} title={t(`${sectionDefinition.id}Section`, sectionDefinition.name)} />
+      <SectionHeading
+        index={index}
+        title={t(`${sectionDefinition.id}Section`, sectionDefinition.name)}
+        action={sectionActions[sectionDefinition.id]}
+      />
       <div className={styles.sectionBody}>
         <Section sectionDefinition={sectionDefinition} />
       </div>

@@ -3,7 +3,6 @@ import { ActionableNotification, Button, Layer, Select, SelectItem, SkeletonText
 import { TrashCan } from '@carbon/react/icons';
 import { FieldArray } from 'formik';
 import { useTranslation } from 'react-i18next';
-import { v4 } from 'uuid';
 import { Autosuggest } from '../../input/custom-input/autosuggest/autosuggest.component';
 import { usePatientRegistrationContext } from '../../patient-registration-context';
 import { fetchPerson } from '../../patient-registration.resource';
@@ -193,40 +192,28 @@ export const RelationshipsSection = () => {
     <section aria-label="Relationships section">
       <FieldArray name="relationships">
         {({
-          push,
           remove,
           form: {
             values: { relationships },
           },
         }) => (
           <div>
-            {relationships && relationships.length > 0
-              ? relationships.map((relationship: RelationshipValue, index) => {
-                  return (
-                    <div key={relationship.uuid ?? relationship.clientId}>
-                      <RelationshipView
-                        relationship={relationship}
-                        index={index}
-                        displayRelationshipTypes={displayRelationshipTypes}
-                        remove={remove}
-                      />
-                    </div>
-                  );
-                })
-              : null}
-            <div className={styles.actions}>
-              <Button
-                kind="ghost"
-                onClick={() =>
-                  push({
-                    clientId: v4(),
-                    relatedPersonUuid: '',
-                    action: 'ADD',
-                  })
-                }>
-                {t('addRelationshipButtonText', 'Add Relationship')}
-              </Button>
-            </div>
+            {relationships && relationships.length > 0 ? (
+              relationships.map((relationship: RelationshipValue, index) => {
+                return (
+                  <div key={relationship.uuid ?? relationship.clientId}>
+                    <RelationshipView
+                      relationship={relationship}
+                      index={index}
+                      displayRelationshipTypes={displayRelationshipTypes}
+                      remove={remove}
+                    />
+                  </div>
+                );
+              })
+            ) : (
+              <p className={styles.emptyState}>{t('noRelationshipsYet', 'No relationships added yet.')}</p>
+            )}
           </div>
         )}
       </FieldArray>
