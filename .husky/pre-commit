@@ -1,7 +1,1 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
-set -e  # die on error
-
-npx pretty-quick --staged
-yarn run extract-translations
+npx lint-staged

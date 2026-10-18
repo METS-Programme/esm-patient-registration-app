@@ -13,7 +13,7 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     clearMocks: true,
-    setupFiles: [r('./setupTests.ts')],
+    setupFiles: [r('./setup-tests.ts')],
     exclude: ['**/node_modules/**', '**/e2e/**', '**/dist/**'],
     coverage: {
       provider: 'v8',
