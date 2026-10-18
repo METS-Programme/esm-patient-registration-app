@@ -1,0 +1,27 @@
+@use '@carbon/layout';
+
+// Wide layout: generic sections (contact, next-of-kin, custom) flow their
+// fields into two columns when the workspace has room. The container is
+// named by the wide layout only (patient-registration.scss), so the classic
+// layout keeps the stacked single-column flow. Field order is preserved —
+// no auto-flow reordering in a clinical form.
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.fieldSlot {
+  min-width: 0;
+}
+
+.fieldSlotFull {
+  grid-column: 1 / -1;
+}
+
+@container workspaceForm (min-width: 48rem) {
+  .fieldsGrid {
+    grid-template-columns: 1fr 1fr;
+    column-gap: layout.$spacing-05;
+  }
+}

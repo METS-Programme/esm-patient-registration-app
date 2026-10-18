@@ -27,6 +27,7 @@ import { SectionWrapper } from './section/section-wrapper.component';
 import { type CapturePhotoProps, type FormValues } from './patient-registration.types';
 import { type SavePatientForm, SavePatientTransactionManager } from './form-manager';
 import { useInitialFormValues, usePatientUuidMap } from './patient-registration-hooks';
+import { useActiveSection } from './use-active-section';
 import BeforeSavePrompt from './before-save-prompt.component';
 import PatientVerification from '../patient-verification/patient-verification.component';
 import { type VerificationSearchParams } from '../patient-verification/verification-types';
@@ -91,6 +92,11 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
       )
       .filter((s) => s);
   }, [config.sections, config.sectionDefinitions]);
+
+  const activeSection = useActiveSection(
+    formContainerRef,
+    useMemo(() => sections.map((s) => s.id), [sections]),
+  );
 
   const onFormSubmit = async (values: FormValues, helpers: FormikHelpers<FormValues>) => {
     helpers.setSubmitting(true);
@@ -215,7 +221,10 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
               <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>
               {sections.map((section) => (
                 <div className={classNames(styles.space05, styles.touchTarget)} key={section.name}>
-                  <Link className={styles.linkName} onClick={() => scrollIntoView(section.id)}>
+                  <Link
+                    className={classNames(styles.linkName, section.id === activeSection && styles.activeLink)}
+                    aria-current={section.id === activeSection ? 'true' : undefined}
+                    onClick={() => scrollIntoView(section.id)}>
                     <XAxis size={16} /> {t(`${section.id}Section`, section.name)}
                   </Link>
                 </div>

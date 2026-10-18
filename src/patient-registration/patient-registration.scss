@@ -110,6 +110,13 @@
   }
 }
 
+.activeLink {
+  color: $color-gray-100;
+  font-weight: 700;
+  border-inline-start: layout.$spacing-02 solid $brand-01;
+  padding-inline-start: layout.$spacing-03;
+}
+
 .spinner {
   min-height: layout.$spacing-05;
   width: max-content;
