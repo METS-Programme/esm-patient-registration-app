@@ -35,6 +35,13 @@ export interface Gender {
   value: string;
 }
 
+export type LayoutVariant = 'classic' | 'wide';
+
+export interface LayoutConfig {
+  variant: LayoutVariant;
+  panelWidth?: number;
+}
+
 export interface RegistrationConfig {
   sections: Array<string>;
   sectionDefinitions: Array<SectionDefinition>;
@@ -83,6 +90,7 @@ export interface RegistrationConfig {
   links: {
     submitButton: string;
   };
+  layout?: LayoutConfig;
   defaultPatientIdentifierTypes: Array<string>;
   registrationObs: {
     encounterTypeUuid: string | null;
@@ -404,6 +412,22 @@ export const esmPatientRegistrationSchema = {
       _type: Type.String,
       _default: '${openmrsSpaBase}/patient/${patientUuid}/chart',
       _validators: [validators.isUrlWithTemplateParameters(['patientUuid'])],
+    },
+  },
+  layout: {
+    variant: {
+      _type: Type.String,
+      _default: 'wide',
+      _description:
+        "'wide' (default) renders the registration form as a responsive workspace with a docked 'Configure identifiers' panel. 'classic' restores the previous single-column layout with the overlay-style identifier picker.",
+      _validators: [validators.oneOf(['classic', 'wide'])],
+    },
+    panelWidth: {
+      _type: Type.Number,
+      _default: 440,
+      _description:
+        'Width, in px, of the docked identifier panel in the wide layout (desktop only). Ignored in the classic layout and on tablet-sized screens.',
+      _validators: [validators.inRange(320, 720)],
     },
   },
   defaultPatientIdentifierTypes: {

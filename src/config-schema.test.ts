@@ -117,3 +117,33 @@ describe('esmPatientRegistrationSchema fieldDefinitions type validator', () => {
     expect(validateType('textarea')).toMatch(/one of/i);
   });
 });
+
+describe('esmPatientRegistrationSchema layout config', () => {
+  it('defaults the layout variant to wide', () => {
+    const config = buildConfig();
+
+    expect(config.layout.variant).toBe('wide');
+    expect(config.layout.panelWidth).toBe(440);
+  });
+
+  it('accepts the classic variant', () => {
+    const [validateVariant] = esmPatientRegistrationSchema.layout.variant._validators;
+
+    expect(validateVariant('classic')).toBeUndefined();
+    expect(validateVariant('wide')).toBeUndefined();
+  });
+
+  it('rejects an unknown layout variant', () => {
+    const [validateVariant] = esmPatientRegistrationSchema.layout.variant._validators;
+
+    expect(validateVariant('bogus')).toMatch(/one of/i);
+  });
+
+  it('rejects panel widths outside the supported range', () => {
+    const [validatePanelWidth] = esmPatientRegistrationSchema.layout.panelWidth._validators;
+
+    expect(validatePanelWidth(440)).toBeUndefined();
+    expect(validatePanelWidth(100)).toMatch(/between/i);
+    expect(validatePanelWidth(1000)).toMatch(/between/i);
+  });
+});
