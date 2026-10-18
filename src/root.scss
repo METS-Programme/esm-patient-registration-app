@@ -4,4 +4,15 @@
 
 .grid {
   grid-template-columns: repeat(1, minmax(0, 1fr));
+
+  // Carbon's .cds--css-grid centers itself with margin-inline: auto once the
+  // viewport passes its 99rem max-inline-size, and insets its content with a
+  // responsive padding (1rem from 42rem, 1.5rem from 99rem). The registration
+  // workspace should hug the left edge instead — the sidebar and form define
+  // their own gutters. Doubled up to out-rank Carbon's single-class rule
+  // regardless of stylesheet order.
+  &:global(.cds--css-grid) {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
 }

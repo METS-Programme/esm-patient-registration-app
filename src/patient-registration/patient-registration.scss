@@ -92,6 +92,44 @@
   flex-shrink: 0;
   height: 100%;
   padding: layout.$spacing-05;
+  transition: width 0.15s ease-in-out;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: layout.$spacing-03;
+  width: 100%;
+
+  h4 {
+    min-width: 0;
+  }
+
+  .collapseToggle {
+    flex: none;
+  }
+}
+
+// Collapsed: the sidebar becomes a narrow rail of numbered steps. Titles
+// give way to the number circles (still clickable), and the actions become
+// icon-only buttons pinned to the bottom as before.
+.collapsed {
+  width: 4rem;
+  padding-inline: layout.$spacing-03;
+
+  .sidebarHeader {
+    justify-content: center;
+  }
+
+  .divider {
+    display: none;
+  }
+
+  .navItem {
+    justify-content: center;
+    padding: layout.$spacing-03;
+  }
 }
 
 .navList {
@@ -184,7 +222,6 @@
 .wideWorkspace {
   .infoGrid {
     max-width: 80rem;
-    margin-inline: auto;
     padding-inline: layout.$spacing-07;
     container-type: inline-size;
     container-name: workspaceForm;

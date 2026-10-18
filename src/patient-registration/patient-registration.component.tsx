@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
 import { Button, InlineLoading } from '@carbon/react';
+import { ChevronLeft, ChevronRight, Close, Save } from '@carbon/react/icons';
 import { useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Form, Formik, type FormikHelpers, type FormikErrors } from 'formik';
@@ -59,6 +60,7 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
   const [patientUuidMap] = usePatientUuidMap({}, patientToEdit, uuidOfPatientToEdit);
 
   const [target, setTarget] = useState<undefined | string>();
+  const [navCollapsed, setNavCollapsed] = useState(false);
   const [capturePhotoProps, setCapturePhotoProps] = useState<CapturePhotoProps | null>(null);
   const [verificationSearchParams, setVerificationSearchParams] = useState<VerificationSearchParams>({
     registry: '',
@@ -213,15 +215,41 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
               ref={formContainerRef}>
               <PatientRegistrationContextProvider value={createContextValue(props)}>
                 {/* Navigation Sidebar */}
-                <div className={styles.stickyColumn}>
-                  <h4>
-                    {inEditMode
-                      ? t('editPatientDetails', 'Edit patient details')
-                      : t('createNewPatient', 'Create new patient')}
-                  </h4>
-                  {showDummyDataInput && <DummyDataInput setValues={props.setValues} />}
-                  <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>
-                  <SectionNav sections={sections} activeSection={activeSection} onNavigate={scrollIntoView} />
+                <div className={classNames(styles.stickyColumn, navCollapsed && styles.collapsed)}>
+                  <div className={styles.sidebarHeader}>
+                    {!navCollapsed && (
+                      <h4>
+                        {inEditMode
+                          ? t('editPatientDetails', 'Edit patient details')
+                          : t('createNewPatient', 'Create new patient')}
+                      </h4>
+                    )}
+                    <Button
+                      className={styles.collapseToggle}
+                      kind="ghost"
+                      size="sm"
+                      hasIconOnly
+                      renderIcon={navCollapsed ? ChevronRight : ChevronLeft}
+                      iconDescription={
+                        navCollapsed
+                          ? t('expandSectionNav', 'Expand section navigator')
+                          : t('collapseSectionNav', 'Collapse section navigator')
+                      }
+                      tooltipAlignment="start"
+                      aria-expanded={!navCollapsed}
+                      aria-controls="registration-sections-nav"
+                      onClick={() => setNavCollapsed((collapsed) => !collapsed)}
+                    />
+                  </div>
+                  {showDummyDataInput && !navCollapsed && <DummyDataInput setValues={props.setValues} />}
+                  {!navCollapsed && <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>}
+                  <SectionNav
+                    id="registration-sections-nav"
+                    sections={sections}
+                    activeSection={activeSection}
+                    onNavigate={scrollIntoView}
+                    collapsed={navCollapsed}
+                  />
                   <div className={styles.sidebarActions}>
                     <hr className={styles.divider} />
                     <Button
@@ -231,21 +259,36 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
                       // Current session and identifiers are required for patient registration.
                       // If currentSession or identifierTypes are not available, then the
                       // user should be blocked to register the patient.
-                      disabled={!currentSession || !identifierTypes || props.isSubmitting}>
+                      disabled={!currentSession || !identifierTypes || props.isSubmitting}
+                      hasIconOnly={navCollapsed}
+                      renderIcon={navCollapsed ? Save : undefined}
+                      iconDescription={
+                        navCollapsed
+                          ? inEditMode
+                            ? t('updatePatient', 'Update patient')
+                            : t('registerPatient', 'Register patient')
+                          : undefined
+                      }>
                       {props.isSubmitting ? (
                         <InlineLoading
                           className={styles.spinner}
                           description={`${t('submitting', 'Submitting')} ...`}
                           iconDescription="submitting"
                         />
-                      ) : inEditMode ? (
+                      ) : navCollapsed ? null : inEditMode ? (
                         t('updatePatient', 'Update patient')
                       ) : (
                         t('registerPatient', 'Register patient')
                       )}
                     </Button>
-                    <Button className={styles.cancelButton} kind="secondary" onClick={cancelRegistration}>
-                      {t('cancel', 'Cancel')}
+                    <Button
+                      className={styles.cancelButton}
+                      kind="secondary"
+                      onClick={cancelRegistration}
+                      hasIconOnly={navCollapsed}
+                      renderIcon={navCollapsed ? Close : undefined}
+                      iconDescription={navCollapsed ? t('cancel', 'Cancel') : undefined}>
+                      {navCollapsed ? null : t('cancel', 'Cancel')}
                     </Button>
                   </div>
                 </div>
