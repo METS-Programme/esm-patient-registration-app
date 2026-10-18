@@ -4,8 +4,12 @@ import { useEffect, useState } from 'react';
  * Tracks which registration section is currently at the top of the form
  * scroll container, for the section navigator's active highlight.
  *
- * A section counts as active once it crosses the upper 45% of the visible
- * container; the first (in document order) intersecting section wins.
+ * A section is active once its top edge crosses a line 30% down the visible
+ * container; the last such section (in document order) wins. Scrolling to
+ * the very bottom pins the final section — short sections (Relationships,
+ * Next of Kin) must activate even when a taller neighbour still occupies
+ * the top of the container, and when the scroll range ends before they can
+ * reach the line.
  */
 export function useActiveSection(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -16,25 +20,31 @@ export function useActiveSection(
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !('IntersectionObserver' in window)) {
+    if (!container) {
       return undefined;
     }
     const ids = sectionKey.split(',');
-    const visible = new Map<string, boolean>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => visible.set((entry.target as HTMLElement).id, entry.isIntersecting));
-        setActive(ids.find((id) => visible.get(id)));
-      },
-      { root: container, rootMargin: '0px 0px -55% 0px', threshold: 0 },
-    );
-    ids.forEach((id) => {
-      const element = document.getElementById(id);
-      if (element) {
-        observer.observe(element);
+
+    const update = () => {
+      const mark = container.getBoundingClientRect().top + container.clientHeight * 0.3;
+      let current: string | undefined;
+      ids.forEach((id) => {
+        const element = document.getElementById(id);
+        if (element && element.getBoundingClientRect().top <= mark) {
+          current = id;
+        }
+      });
+      // At the end of the scroll range the last section can never reach the
+      // mark on its own, so pin it once the container is scrolled to bottom.
+      if (container.scrollHeight - container.scrollTop <= container.clientHeight + 1) {
+        current = ids[ids.length - 1];
       }
-    });
-    return () => observer.disconnect();
+      setActive(current);
+    };
+
+    container.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => container.removeEventListener('scroll', update);
     // sectionKey is the stable serialization of sectionIds
   }, [containerRef, sectionKey]);
 
