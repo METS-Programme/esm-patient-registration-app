@@ -36,7 +36,6 @@ export function useActiveSection(
     });
     return () => observer.disconnect();
     // sectionKey is the stable serialization of sectionIds
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [containerRef, sectionKey]);
 
   return active;
