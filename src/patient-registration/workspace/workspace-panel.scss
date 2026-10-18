@@ -1,0 +1,40 @@
+@use '@carbon/layout';
+@use '@carbon/type';
+@use '@openmrs/esm-styleguide/src/vars' as *;
+
+.panel {
+  position: sticky;
+  top: 0;
+  height: 100%;
+  flex-shrink: 0;
+  width: var(--workspace-panel-width, 27.5rem);
+  background-color: $ui-02;
+  border-inline-start: 1px solid $text-03;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: $ui-03;
+  border-bottom: 1px solid $text-03;
+  padding: 0 layout.$spacing-05;
+}
+
+.panelTitle {
+  @include type.type-style('heading-compact-02');
+  color: $ui-05;
+  outline: none;
+}
+
+.panelContent {
+  padding: layout.$spacing-05;
+  overflow-y: auto;
+}
+
+.panelFooter {
+  border-top: 1px solid $text-03;
+}

@@ -8,8 +8,10 @@ import { Form, Formik, type FormikHelpers, type FormikErrors } from 'formik';
 import {
   createErrorHandler,
   interpolateUrl,
+  isDesktop,
   showSnackbar,
   useConfig,
+  useLayoutType,
   usePatient,
   usePatientPhoto,
 } from '@openmrs/esm-framework';
@@ -18,6 +20,8 @@ import { cancelRegistration, filterOutUndefinedPatientIdentifiers, scrollIntoVie
 import { getValidationSchema } from './validation/patient-registration-validation';
 import { DummyDataInput } from './input/dummy-data/dummy-data-input.component';
 import { PatientRegistrationContextProvider } from './patient-registration-context';
+import { useWorkspacePanelState, WorkspaceContextProvider } from './workspace/workspace-context';
+import { WorkspaceIdentifierPanel } from './field/id/workspace-identifier-panel.component';
 import { useResourcesContext } from '../resources-context';
 import { SectionWrapper } from './section/section-wrapper.component';
 import { type CapturePhotoProps, type FormValues } from './patient-registration.types';
@@ -62,6 +66,9 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
   const location = currentSession?.sessionLocation?.uuid;
   const inEditMode = isLoadingPatientToEdit ? undefined : !!(uuidOfPatientToEdit && patientToEdit);
   const layoutVariant = config.layout?.variant ?? 'wide';
+  const layout = useLayoutType();
+  const workspace = useWorkspacePanelState();
+  const dockedPanelOpen = layoutVariant === 'wide' && isDesktop(layout) && workspace.activePanel === 'identifiers';
   const formContainerRef = useRef<HTMLDivElement>(null);
   const showDummyDataInput = useMemo(
     () => localStorage.getItem('openmrs:devtools') === 'true' && !inEditMode,
@@ -191,9 +198,12 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
       onSubmit={onFormSubmit}
       validationSchema={validationSchema}>
       {(props) => (
-        <Form className={classNames(styles.form, layoutVariant === 'wide' && styles.wideWorkspace)}>
-          <BeforeSavePrompt when={Object.keys(props.touched).length > 0} redirect={target} />
-          <div className={styles.formContainer} ref={formContainerRef}>
+        <WorkspaceContextProvider value={workspace}>
+          <Form className={classNames(styles.form, layoutVariant === 'wide' && styles.wideWorkspace)}>
+            <BeforeSavePrompt when={Object.keys(props.touched).length > 0} redirect={target} />
+            <div
+              className={classNames(styles.formContainer, dockedPanelOpen && styles.panelOpen)}
+              ref={formContainerRef}>
             {/* Navigation Sidebar */}
             <div className={styles.stickyColumn}>
               <h4>
@@ -252,8 +262,14 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
                 ))}
               </PatientRegistrationContextProvider>
             </div>
+            {/* Docked workspace panel (wide layout, desktop): shrinks the form
+                instead of overlaying it. */}
+            {dockedPanelOpen && (
+              <WorkspaceIdentifierPanel setFieldValue={props.setFieldValue} closeOverlay={workspace.closePanel} />
+            )}
           </div>
-        </Form>
+          </Form>
+        </WorkspaceContextProvider>
       )}
     </Formik>
   );

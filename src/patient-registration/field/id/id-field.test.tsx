@@ -13,10 +13,17 @@ import {
   PatientRegistrationContextProvider,
   type PatientRegistrationContextProps,
 } from '../../patient-registration-context';
+import { WorkspaceContextProvider, type WorkspaceContextProps } from '../../workspace/workspace-context';
 import { Identifiers, setIdentifierSource } from './id-field.component';
 import { ResourcesContextProvider } from '../../../resources-context';
 
 const mockUseConfig = vi.mocked(useConfig<RegistrationConfig>);
+
+const mockWorkspaceContextValue: WorkspaceContextProps = {
+  activePanel: null,
+  openPanel: vi.fn(),
+  closePanel: vi.fn(),
+};
 
 const mockResourcesContextValue = {
   addressTemplate: null as unknown as AddressTemplate,
@@ -70,9 +77,11 @@ function renderIdentifiers(
   return renderWithContext(
     <Formik initialValues={{}} onSubmit={() => {}}>
       <Form>
-        <PatientRegistrationContextProvider value={contextValues}>
-          <Identifiers />
-        </PatientRegistrationContextProvider>
+        <WorkspaceContextProvider value={mockWorkspaceContextValue}>
+          <PatientRegistrationContextProvider value={contextValues}>
+            <Identifiers />
+          </PatientRegistrationContextProvider>
+        </WorkspaceContextProvider>
       </Form>
     </Formik>,
     ResourcesContextProvider,
@@ -121,8 +130,9 @@ describe('Identifiers component', () => {
   });
 
   describe('User interaction', () => {
-    it('opens identifier selection overlay when Configure button is clicked', async () => {
+    it('opens the identifiers workspace panel when Configure button is clicked', async () => {
       const user = userEvent.setup();
+      mockWorkspaceContextValue.openPanel = vi.fn();
       mockResourcesContextValue.identifierTypes = mockIdentifierTypes;
       renderIdentifiers();
 
@@ -130,7 +140,7 @@ describe('Identifiers component', () => {
       await user.click(configureButton);
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'Close overlay' })).toBeInTheDocument();
+        expect(mockWorkspaceContextValue.openPanel).toHaveBeenCalledWith('identifiers');
       });
     });
   });

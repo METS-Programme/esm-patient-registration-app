@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button, SkeletonText } from '@carbon/react';
 import { ArrowRight } from '@carbon/react/icons';
 import { useLayoutType, useConfig, isDesktop, UserHasAccess } from '@openmrs/esm-framework';
+import { useWorkspaceContext } from '../../workspace/workspace-context';
 import { type RegistrationConfig } from '../../../config-schema';
 import { usePatientRegistrationContext } from '../../patient-registration-context';
 import { useResourcesContext } from '../../../resources-context';
@@ -66,7 +67,11 @@ export const Identifiers: React.FC = () => {
   const { values, setFieldValue, initialFormValues } = usePatientRegistrationContext();
   const { t } = useTranslation();
   const layout = useLayoutType();
-  const [showIdentifierOverlay, setShowIdentifierOverlay] = useState(false);
+  const { activePanel, openPanel, closePanel } = useWorkspaceContext();
+  // Desktop wide layout docks the picker as a workspace panel (rendered by
+  // the form shell); tablet and the classic layout use the overlay here.
+  const isDocked = isDesktop(layout);
+  const showIdentifierOverlay = activePanel === 'identifiers' && !isDocked;
   const [showFingerPrintOverlay, setShowFingerPrintOverlay] = useState(false);
   const config = useConfig<RegistrationConfig>();
   const { defaultPatientIdentifierTypes } = config;
@@ -110,10 +115,7 @@ export const Identifiers: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identifierTypes, setFieldValue, defaultPatientIdentifierTypes, values.identifiers, initializeIdentifier]);
 
-  const closeIdentifierSelectionOverlay = useCallback(
-    () => setShowIdentifierOverlay(false),
-    [setShowIdentifierOverlay],
-  );
+  const closeIdentifierSelectionOverlay = useCallback(() => closePanel(), [closePanel]);
 
   if (isLoading) {
     return (
@@ -136,7 +138,7 @@ export const Identifiers: React.FC = () => {
           <Button
             kind="ghost"
             className={styles.configureIdentifiersButton}
-            onClick={() => setShowIdentifierOverlay(true)}
+            onClick={() => openPanel('identifiers')}
             size={isDesktop(layout) ? 'sm' : 'md'}>
             {t('configure', 'Configure')} <ArrowRight className={styles.arrowRightIcon} size={16} />
           </Button>

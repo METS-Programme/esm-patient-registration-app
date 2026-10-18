@@ -9,10 +9,17 @@ import { esmPatientRegistrationSchema, type RegistrationConfig } from '../../con
 import { type Resources } from '../../registration.resource';
 import type { AddressTemplate, FormValues } from '../patient-registration.types';
 import { PatientRegistrationContextProvider } from '../patient-registration-context';
+import { WorkspaceContextProvider, type WorkspaceContextProps } from '../workspace/workspace-context';
 import { ResourcesContextProvider } from '../../resources-context';
 import { renderWithContext } from 'tools';
 
 const mockUseConfig = vi.mocked(useConfig<RegistrationConfig>);
+
+const mockWorkspaceContextValue: WorkspaceContextProps = {
+  activePanel: null,
+  openPanel: vi.fn(),
+  closePanel: vi.fn(),
+};
 
 const predefinedAddressTemplate = {
   uuid: 'test-address-template-uuid',
@@ -289,9 +296,11 @@ describe('Field', () => {
     renderWithContext(
       <Formik initialValues={{}} onSubmit={vi.fn()}>
         <Form>
-          <PatientRegistrationContextProvider value={updatedContextValues}>
-            <Field name="id" />
-          </PatientRegistrationContextProvider>
+          <WorkspaceContextProvider value={mockWorkspaceContextValue}>
+            <PatientRegistrationContextProvider value={updatedContextValues}>
+              <Field name="id" />
+            </PatientRegistrationContextProvider>
+          </WorkspaceContextProvider>
         </Form>
       </Formik>,
       ResourcesContextProvider,
@@ -361,14 +370,16 @@ describe('Field', () => {
       renderWithContext(
         <Formik initialValues={{}} onSubmit={vi.fn()}>
           <Form>
-            <PatientRegistrationContextProvider
-              value={{
-                ...initialContextValues,
-                initialFormValues: { identifiers: {} } as FormValues,
-                values: { identifiers: {} } as FormValues,
-              }}>
-              <Field name="id" />
-            </PatientRegistrationContextProvider>
+            <WorkspaceContextProvider value={mockWorkspaceContextValue}>
+              <PatientRegistrationContextProvider
+                value={{
+                  ...initialContextValues,
+                  initialFormValues: { identifiers: {} } as FormValues,
+                  values: { identifiers: {} } as FormValues,
+                }}>
+                <Field name="id" />
+              </PatientRegistrationContextProvider>
+            </WorkspaceContextProvider>
           </Form>
         </Formik>,
         ResourcesContextProvider,
