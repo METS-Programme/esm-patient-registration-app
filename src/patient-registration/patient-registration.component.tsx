@@ -21,6 +21,7 @@ import { DummyDataInput } from './input/dummy-data/dummy-data-input.component';
 import { PatientRegistrationContextProvider } from './patient-registration-context';
 import { useWorkspacePanelState, WorkspaceContextProvider } from './workspace/workspace-context';
 import { WorkspaceIdentifierPanel } from './field/id/workspace-identifier-panel.component';
+import { WorkspaceFingerprintPanel } from './workspace/workspace-fingerprint-panel.component';
 import { useResourcesContext } from '../resources-context';
 import { SectionWrapper } from './section/section-wrapper.component';
 import { type CapturePhotoProps, type FormValues } from './patient-registration.types';
@@ -69,7 +70,7 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
   const layoutVariant = config.layout?.variant ?? 'wide';
   const layout = useLayoutType();
   const workspace = useWorkspacePanelState();
-  const dockedPanelOpen = layoutVariant === 'wide' && isDesktop(layout) && workspace.activePanel === 'identifiers';
+  const dockedPanelOpen = layoutVariant === 'wide' && isDesktop(layout) && workspace.activePanel !== null;
   const formContainerRef = useRef<HTMLDivElement>(null);
   const showDummyDataInput = useMemo(
     () => localStorage.getItem('openmrs:devtools') === 'true' && !inEditMode,
@@ -263,10 +264,13 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
                     />
                   ))}
                 </div>
-                {/* Docked workspace panel (wide layout, desktop): shrinks the form
+                {/* Docked workspace panels (wide layout, desktop): shrink the form
                     instead of overlaying it. */}
-                {dockedPanelOpen && (
+                {dockedPanelOpen && workspace.activePanel === 'identifiers' && (
                   <WorkspaceIdentifierPanel setFieldValue={props.setFieldValue} closeOverlay={workspace.closePanel} />
+                )}
+                {dockedPanelOpen && workspace.activePanel === 'fingerprints' && (
+                  <WorkspaceFingerprintPanel closeOverlay={workspace.closePanel} />
                 )}
               </PatientRegistrationContextProvider>
             </div>

@@ -149,7 +149,7 @@ export const Identifiers: React.FC = () => {
         <Button
           kind="ghost"
           className={styles.configureIdentifiersButton}
-          onClick={() => setShowFingerPrintOverlay(true)}
+          onClick={() => (isDocked ? openPanel('fingerprints') : setShowFingerPrintOverlay(true))}
           size={isDesktop(layout) ? 'sm' : 'md'}>
           {t('addFingerPrint', 'Add FingerPrint')}
         </Button>

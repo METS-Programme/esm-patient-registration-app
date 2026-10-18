@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
-export type WorkspacePanelId = 'identifiers';
+export type WorkspacePanelId = 'identifiers' | 'fingerprints';
 
 export interface WorkspaceContextProps {
   activePanel: WorkspacePanelId | null;
