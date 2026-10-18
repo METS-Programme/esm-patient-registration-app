@@ -1,4 +1,5 @@
 @use '@carbon/layout';
+@use '@openmrs/esm-styleguide/src/vars' as *;
 
 // Wide layout: generic sections (contact, next-of-kin, custom) flow their
 // fields into two columns when the workspace has room. The container is
