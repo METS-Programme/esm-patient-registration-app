@@ -1,12 +1,12 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ContentSwitcher, Switch } from '@carbon/react';
 import { useField } from 'formik';
 import { ExtensionSlot, useConfig } from '@openmrs/esm-framework';
+import { type RegistrationConfig } from '../../../config-schema';
+import { usePatientRegistrationContext } from '../../patient-registration-context';
 import { Input } from '../../input/basic-input/input/input.component';
-import { PatientRegistrationContext } from '../../patient-registration-context';
 import styles from '../field.scss';
-import { RegistrationConfig } from '../../../config-schema';
 
 export const unidentifiedPatientAttributeTypeUuid = '8b56eac7-5c76-4b9c-8c6f-1deab8d3fc47';
 const containsNoNumbers = /^([^0-9]*)$/;
@@ -21,7 +21,8 @@ function checkNumber(value: string) {
 
 export const NameField = () => {
   const { t } = useTranslation();
-  const { setCapturePhotoProps, currentPhoto, setFieldValue } = useContext(PatientRegistrationContext);
+  const { setCapturePhotoProps, currentPhoto, setFieldValue, setFieldTouched } = usePatientRegistrationContext();
+
   const {
     fieldConfigurations: {
       name: {
@@ -48,9 +49,10 @@ export const NameField = () => {
           imageData: dataUri,
           dateTime: photoDateTime,
         });
+        setFieldTouched('photo', true, false);
       }
     },
-    [setCapturePhotoProps],
+    [setCapturePhotoProps, setFieldTouched],
   );
 
   const toggleNameKnown = (e) => {
@@ -63,6 +65,9 @@ export const NameField = () => {
       setFieldValue('familyName', defaultUnknownFamilyName);
       setUnknownPatient('true');
     }
+    setFieldTouched('givenName', true);
+    setFieldTouched('familyName', true);
+    setFieldTouched(`attributes.${unidentifiedPatientAttributeTypeUuid}`, true, false);
   };
 
   const firstNameField = (
@@ -114,10 +119,11 @@ export const NameField = () => {
               </div>
               <ContentSwitcher
                 className={styles.contentSwitcher}
+                size="md"
                 selectedIndex={isPatientUnknown ? 1 : 0}
                 onChange={toggleNameKnown}>
-                <Switch name="known" text={t('yes', 'Yes')} />
-                <Switch name="unknown" text={t('no', 'No')} />
+                <Switch name="known">{t('yes', 'Yes')}</Switch>
+                <Switch name="unknown">{t('no', 'No')}</Switch>
               </ContentSwitcher>
             </>
           )}

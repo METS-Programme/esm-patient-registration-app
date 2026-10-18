@@ -4,38 +4,29 @@ import { useAddressEntries, useAddressEntryFetchConfig } from './address-hierarc
 import { useField } from 'formik';
 import ComboInput from '../../input/combo-input/combo-input.component';
 
-interface AddressHierarchyLevelsProps {
-  orderedAddressFields: Array<any>;
-}
-
-const AddressHierarchyLevels: React.FC<AddressHierarchyLevelsProps> = ({ orderedAddressFields }) => {
-  const { t } = useTranslation();
-
-  return (
-    <>
-      {orderedAddressFields.map((attribute) => (
-        <AddressComboBox key={attribute.id} attribute={attribute} />
-      ))}
-    </>
-  );
-};
-
-export default AddressHierarchyLevels;
-
 interface AddressComboBoxProps {
   attribute: {
     id: string;
     name: string;
     value: string;
     label: string;
+    required?: boolean;
   };
+}
+
+interface AddressHierarchyLevelsProps {
+  orderedAddressFields: Array<any>;
 }
 
 const AddressComboBox: React.FC<AddressComboBoxProps> = ({ attribute }) => {
   const { t } = useTranslation();
   const [field, meta, { setValue }] = useField(`address.${attribute.name}`);
   const { fetchEntriesForField, searchString, updateChildElements } = useAddressEntryFetchConfig(attribute.name);
-  const { entries } = useAddressEntries(fetchEntriesForField, searchString);
+  const { entries, isLoadingAddressEntries, errorFetchingAddressEntries } = useAddressEntries(
+    fetchEntriesForField,
+    searchString,
+  );
+  const label = t(attribute.label) + (attribute?.required ? '' : ` (${t('optional', 'optional')})`);
 
   const handleInputChange = useCallback(
     (newValue) => {
@@ -57,14 +48,29 @@ const AddressComboBox: React.FC<AddressComboBoxProps> = ({ attribute }) => {
   return (
     <ComboInput
       entries={entries}
+      error={errorFetchingAddressEntries}
+      isLoading={isLoadingAddressEntries}
       handleSelection={handleSelection}
       name={`address.${attribute.name}`}
       fieldProps={{
         ...field,
         id: attribute.name,
-        labelText: `${t(attribute.label)} (${t('optional', 'optional')})`,
+        labelText: label,
+        required: attribute?.required,
       }}
       handleInputChange={handleInputChange}
     />
   );
 };
+
+const AddressHierarchyLevels: React.FC<AddressHierarchyLevelsProps> = ({ orderedAddressFields }) => {
+  return (
+    <>
+      {orderedAddressFields.map((attribute) => (
+        <AddressComboBox key={attribute.id} attribute={attribute} />
+      ))}
+    </>
+  );
+};
+
+export default AddressHierarchyLevels;

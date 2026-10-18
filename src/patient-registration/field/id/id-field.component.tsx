@@ -1,20 +1,20 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, SkeletonText } from '@carbon/react';
 import { ArrowRight } from '@carbon/react/icons';
 import { useLayoutType, useConfig, isDesktop, UserHasAccess } from '@openmrs/esm-framework';
-import IdentifierSelectionOverlay from './identifier-selection-overlay';
-import { IdentifierInput } from '../../input/custom-input/identifier/identifier-input.component';
-import { PatientRegistrationContext } from '../../patient-registration-context';
-import {
+import { type RegistrationConfig } from '../../../config-schema';
+import { usePatientRegistrationContext } from '../../patient-registration-context';
+import { useResourcesContext } from '../../../resources-context';
+import type {
   FormValues,
   IdentifierSource,
   PatientIdentifierType,
   PatientIdentifierValue,
 } from '../../patient-registration.types';
-import { ResourcesContext } from '../../../offline.resources';
+import IdentifierInput from '../../input/custom-input/identifier/identifier-input.component';
+import IdentifierSelectionOverlay from './identifier-selection-overlay.component';
 import styles from '../field.scss';
-import FingerPrintCapture from '../../input/custom-input/fingerprint-capture/fingerprint-capture.component';
 
 export function setIdentifierSource(
   identifierSource: IdentifierSource,
@@ -26,14 +26,16 @@ export function setIdentifierSource(
   selectedSource: IdentifierSource;
 } {
   const autoGeneration = identifierSource?.autoGenerationOption?.automaticGenerationEnabled;
+  const manualEntryEnabled = identifierSource?.autoGenerationOption?.manualEntryEnabled;
   return {
     selectedSource: identifierSource,
     autoGeneration,
-    identifierValue: autoGeneration
-      ? 'auto-generated'
-      : identifierValue !== 'auto-generated'
-      ? identifierValue
-      : initialValue,
+    identifierValue:
+      autoGeneration && !manualEntryEnabled
+        ? 'auto-generated'
+        : identifierValue !== 'auto-generated'
+          ? identifierValue
+          : initialValue,
   };
 }
 
@@ -58,18 +60,20 @@ export function deleteIdentifierType(identifiers: FormValues['identifiers'], ide
 }
 
 export const Identifiers: React.FC = () => {
-  const { identifierTypes } = useContext(ResourcesContext);
-  const isLoading = !identifierTypes;
-  const { values, setFieldValue, initialFormValues } = useContext(PatientRegistrationContext);
+  const { identifierTypes } = useResourcesContext();
+  const isLoading = !identifierTypes?.length;
+  const { values, setFieldValue, initialFormValues } = usePatientRegistrationContext();
   const { t } = useTranslation();
   const layout = useLayoutType();
   const [showIdentifierOverlay, setShowIdentifierOverlay] = useState(false);
-  const [showFingerPrintOverlay, setShowFingerPrintOverlay] = useState(false);
-  const config = useConfig();
+  const config = useConfig<RegistrationConfig>();
   const { defaultPatientIdentifierTypes } = config;
+  // The Preferred option takes up room next to each identifier, so give long identifiers the full width
+  const sectionClassName = config.fieldConfigurations?.identifier?.allowPreferredSelection
+    ? undefined
+    : styles.halfWidthInDesktopView;
 
   useEffect(() => {
-    // Initialization
     if (identifierTypes) {
       const identifiers = {};
       identifierTypes
@@ -103,48 +107,44 @@ export const Identifiers: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [identifierTypes, setFieldValue, defaultPatientIdentifierTypes, values.identifiers, initializeIdentifier]);
 
+  const closeIdentifierSelectionOverlay = useCallback(
+    () => setShowIdentifierOverlay(false),
+    [setShowIdentifierOverlay],
+  );
+
   if (isLoading) {
     return (
-      <div className={styles.halfWidthInDesktopView}>
+      <div className={sectionClassName} data-testid="identifiers-section">
         <div className={styles.identifierLabelText}>
           <h4 className={styles.productiveHeading02Light}>{t('idFieldLabelText', 'Identifiers')}</h4>
         </div>
-        <SkeletonText />
+        <div role="progressbar" aria-label={t('loading', 'Loading')}>
+          <SkeletonText />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.halfWidthInDesktopView}>
+    <div className={sectionClassName} data-testid="identifiers-section">
       <UserHasAccess privilege={['Get Identifier Types', 'Add Patient Identifiers']}>
         <div className={styles.identifierLabelText}>
           <h4 className={styles.productiveHeading02Light}>{t('idFieldLabelText', 'Identifiers')}</h4>
           <Button
             kind="ghost"
-            className={styles.setIDNumberButton}
+            className={styles.configureIdentifiersButton}
             onClick={() => setShowIdentifierOverlay(true)}
             size={isDesktop(layout) ? 'sm' : 'md'}>
-            {t('configure', 'Configure')} <ArrowRight size={16} />
+            {t('configure', 'Configure')} <ArrowRight className={styles.arrowRightIcon} size={16} />
           </Button>
         </div>
       </UserHasAccess>
-      <Button
-        kind="ghost"
-        className={styles.setIDNumberButton}
-        onClick={() => setShowFingerPrintOverlay(true)}
-        size={isDesktop(layout) ? 'sm' : 'md'}>
-        {t('addFingerPrint', 'Add FingerPrint')}
-      </Button>
       <div>
         {Object.entries(values.identifiers).map(([fieldName, identifier]) => (
           <IdentifierInput key={fieldName} fieldName={fieldName} patientIdentifier={identifier} />
         ))}
-        {showFingerPrintOverlay && <FingerPrintCapture closeOverlay={() => setShowFingerPrintOverlay(false)} />}
         {showIdentifierOverlay && (
-          <IdentifierSelectionOverlay
-            setFieldValue={setFieldValue}
-            closeOverlay={() => setShowIdentifierOverlay(false)}
-          />
+          <IdentifierSelectionOverlay setFieldValue={setFieldValue} closeOverlay={closeIdentifierSelectionOverlay} />
         )}
       </div>
     </div>

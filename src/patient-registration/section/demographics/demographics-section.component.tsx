@@ -1,8 +1,8 @@
-import React, { useContext, useEffect } from 'react';
-import styles from './../section.scss';
+import React, { useEffect } from 'react';
 import { useField } from 'formik';
-import { PatientRegistrationContext } from '../../patient-registration-context';
 import { Field } from '../../field/field.component';
+import { usePatientRegistrationContext } from '../../patient-registration-context';
+import styles from './../section.scss';
 
 export interface DemographicsSectionProps {
   fields: Array<string>;
@@ -10,7 +10,7 @@ export interface DemographicsSectionProps {
 
 export const DemographicsSection: React.FC<DemographicsSectionProps> = ({ fields }) => {
   const [field, meta] = useField('addNameInLocalLanguage');
-  const { setFieldValue } = useContext(PatientRegistrationContext);
+  const { setFieldValue } = usePatientRegistrationContext();
 
   useEffect(() => {
     if (!field.value && meta.touched) {

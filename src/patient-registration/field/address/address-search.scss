@@ -1,6 +1,6 @@
-@use '@carbon/styles/scss/spacing';
-@use '@carbon/styles/scss/type';
-@import '~@openmrs/esm-styleguide/src/vars';
+@use '@carbon/layout';
+@use '@carbon/type';
+@use '@openmrs/esm-styleguide/src/vars' as *;
 
 .label01 {
   @include type.type-style('label-01');
@@ -12,21 +12,24 @@
   margin-top: 0;
   max-height: 20rem;
   overflow-y: auto;
-  padding-left: 0;
+  padding: 0;
   width: 100%;
   position: absolute;
   left: 0;
   background-color: #fff;
-  margin-bottom: 20px;
+  margin-bottom: 1.25rem;
   z-index: 99;
   border: 1px solid $ui-03;
 }
 
 .suggestions li {
-  padding: spacing.$spacing-05;
+  padding: layout.$spacing-05;
   line-height: 1.29;
   color: #525252;
-  border-bottom: 1px solid #8d8d8d;
+}
+
+.suggestions li:last-of-type {
+  border-bottom: none;
 }
 
 .suggestions li:hover {
@@ -45,6 +48,20 @@
 
 .autocompleteSearch {
   width: 100%;
+}
+
+.noResults,
+.loading {
+  color: $text-02;
+  cursor: default;
+  border-bottom: none;
+}
+
+.noResults:hover,
+.loading:hover {
+  background-color: inherit;
+  color: $text-02;
+  cursor: default;
 }
 
 .suggestions a {

@@ -12,8 +12,6 @@ export function PhoneField() {
     uuid: config.fieldConfigurations.phone.personAttributeUuid,
     validation: config.fieldConfigurations.phone.validation,
     showHeading: false,
-    placeholder: '',
-    customConceptAnswers: [],
   };
   return <PersonAttributeField fieldDefinition={fieldDefinition} />;
 }

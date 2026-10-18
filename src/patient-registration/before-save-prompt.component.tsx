@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { showModal, navigate } from '@openmrs/esm-framework';
+import { type FC, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { showModal, navigate } from '@openmrs/esm-framework';
 
 function getUrlWithoutPrefix(url: string) {
   return url.split(window['getOpenmrsSpaBase']())?.[1];
@@ -11,7 +11,7 @@ interface BeforeSavePromptProps {
   redirect?: string;
 }
 
-const BeforeSavePrompt: React.FC<BeforeSavePromptProps> = ({ when, redirect }) => {
+const BeforeSavePrompt: FC<BeforeSavePromptProps> = ({ when, redirect }) => {
   const { t } = useTranslation();
   const ref = useRef<boolean>(false);
   const [localTarget, setTarget] = useState<string | undefined>();
@@ -62,7 +62,15 @@ const BeforeSavePrompt: React.FC<BeforeSavePromptProps> = ({ when, redirect }) =
 
   useEffect(() => {
     if (typeof target === 'string') {
-      navigate({ to: `\${openmrsSpaBase}/${getUrlWithoutPrefix(target)}` });
+      const urlWithoutPrefix = getUrlWithoutPrefix(target);
+
+      // `target` does not necessarily point inside the SPA. It may be a legacy OpenMRS
+      // page, either configured via `links.submitButton` or navigated to from within the
+      // form. Such a URL has no SPA-relative portion to extract, so pass it through
+      // unchanged and let `navigate` choose between single-spa routing and a page load.
+      navigate({
+        to: typeof urlWithoutPrefix === 'string' ? `\${openmrsSpaBase}/${urlWithoutPrefix}` : target,
+      });
     }
   }, [target]);
 

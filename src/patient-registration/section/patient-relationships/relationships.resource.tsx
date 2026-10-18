@@ -1,8 +1,35 @@
-import { FetchResponse, openmrsFetch, showToast } from '@openmrs/esm-framework';
-import { RelationshipValue } from '../../patient-registration.types';
-import useSWR from 'swr';
 import { useMemo } from 'react';
+import useSWR from 'swr';
+import { type FetchResponse, openmrsFetch, restBaseUrl } from '@openmrs/esm-framework';
+import { type RelationshipValue } from '../../patient-registration.types';
 import { personRelationshipRepresentation } from '../../../constants';
+
+export interface Relationship {
+  display: string;
+  uuid: string;
+  personA: {
+    age: number;
+    display: string;
+    birthdate: string;
+    uuid: string;
+  };
+  personB: {
+    age: number;
+    display: string;
+    birthdate: string;
+    uuid: string;
+  };
+  relationshipType: {
+    uuid: string;
+    display: string;
+    aIsToB: string;
+    bIsToA: string;
+  };
+}
+
+interface RelationshipsResponse {
+  results: Array<Relationship>;
+}
 
 export function useInitialPatientRelationships(patientUuid: string): {
   data: Array<RelationshipValue>;
@@ -10,7 +37,7 @@ export function useInitialPatientRelationships(patientUuid: string): {
 } {
   const shouldFetch = !!patientUuid;
   const { data, error, isLoading } = useSWR<FetchResponse<RelationshipsResponse>, Error>(
-    shouldFetch ? `/ws/rest/v1/relationship?v=${personRelationshipRepresentation}&person=${patientUuid}` : null,
+    shouldFetch ? `${restBaseUrl}/relationship?v=${personRelationshipRepresentation}&person=${patientUuid}` : null,
     openmrsFetch,
   );
 
@@ -45,34 +72,7 @@ export function useInitialPatientRelationships(patientUuid: string): {
       error,
       isLoading,
     };
-  }, [patientUuid, data, error, isLoading]);
+  }, [data?.data?.results, error, isLoading, patientUuid]);
 
   return result;
-}
-
-export interface Relationship {
-  display: string;
-  uuid: string;
-  personA: {
-    age: number;
-    display: string;
-    birthdate: string;
-    uuid: string;
-  };
-  personB: {
-    age: number;
-    display: string;
-    birthdate: string;
-    uuid: string;
-  };
-  relationshipType: {
-    uuid: string;
-    display: string;
-    aIsToB: string;
-    bIsToA: string;
-  };
-}
-
-interface RelationshipsResponse {
-  results: Array<Relationship>;
 }

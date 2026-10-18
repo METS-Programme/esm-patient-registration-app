@@ -1,3 +1,4 @@
+export * from './appointments.mock';
 export * from './address.mock';
 export * from './identifier-types.mock';
 export * from './identifiers.mock';

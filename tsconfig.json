@@ -5,7 +5,7 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "react",
     "skipLibCheck": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": [
       "dom",
       "es5",
@@ -21,7 +21,8 @@
     "noEmit": true,
     "target": "esnext",
     "paths": {
-      "@openmrs/*": ["./node_modules/@openmrs/*"]
+      "__mocks__": ["./__mocks__"],
+      "tools": ["./tools"]
     }
   },
   "include": ["src/**/*", "tools/**/*"],

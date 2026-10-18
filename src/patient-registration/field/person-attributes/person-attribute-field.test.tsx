@@ -1,187 +1,364 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { Form, Formik, type FormikTouched } from 'formik';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { OpenmrsDatePicker } from '@openmrs/esm-framework';
+import { type FieldDefinition } from '../../../config-schema';
 import { usePersonAttributeType } from './person-attributes.resource';
-import { PersonAttributeField } from './person-attribute-field.component';
 import { useConceptAnswers } from '../field.resource';
-import { Form, Formik } from 'formik';
-import { FieldDefinition } from '../../../config-schema';
+import { PersonAttributeField } from './person-attribute-field.component';
+import { initialFormValues } from '../../patient-registration.component';
+import { type FormValues } from '../../patient-registration.types';
 
-jest.mock('./person-attributes.resource'); // Mock the usePersonAttributeType hook
-jest.mock('../field.resource'); // Mock the useConceptAnswers hook
-
-jest.mock('formik', () => ({
-  ...jest.requireActual('formik'),
+vi.mock('./person-attributes.resource', async () => ({
+  ...((await vi.importActual('./person-attributes.resource')) as object),
+  usePersonAttributeType: vi.fn(),
 }));
 
-const mockedUsePersonAttributeType = usePersonAttributeType as jest.Mock;
-const mockedUseConceptAnswers = useConceptAnswers as jest.Mock;
+vi.mock('../field.resource', async () => ({
+  ...((await vi.importActual('../field.resource')) as object),
+  useConceptAnswers: vi.fn(),
+}));
 
-let fieldDefinition: FieldDefinition;
+const mockUsePersonAttributeType = vi.mocked(usePersonAttributeType);
+const mockUseConceptAnswers = vi.mocked(useConceptAnswers);
 
-describe('PersonAttributeField', () => {
-  let mockPersonAttributeType = {
-    format: 'java.lang.String',
-    display: 'Referred by',
-    uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
+const mockPersonAttributeType = {
+  format: 'java.lang.String',
+  display: 'Referred by',
+  uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
+  name: 'Referred by',
+  description: 'The person who referred the patient',
+};
+
+/**
+ * Helper to render PersonAttributeField with Formik render props for state-dependent tests.
+ */
+const renderPersonAttributeFieldWithFormik = (
+  fieldDefinition: FieldDefinition,
+  initialValues: Partial<FormValues> = {},
+  options?: { enableReinitialize?: boolean },
+) => {
+  const defaultValues = {
+    attributes: {},
+    ...initialValues,
   };
 
+  let formValuesRef: FormValues = { ...initialFormValues, ...defaultValues } as FormValues;
+  let formTouchedRef: FormikTouched<FormValues> = {};
+
+  const utils = render(
+    <Formik initialValues={defaultValues} onSubmit={() => {}} enableReinitialize={options?.enableReinitialize}>
+      {({ setFieldValue, values, setFieldTouched, touched }) => {
+        formValuesRef = { ...initialFormValues, ...values } as FormValues;
+        formTouchedRef = touched;
+        return (
+          <Form>
+            <PersonAttributeField fieldDefinition={fieldDefinition} />
+          </Form>
+        );
+      }}
+    </Formik>,
+  );
+
+  return {
+    ...utils,
+    getFormValues: () => formValuesRef,
+    getFormTouched: () => formTouchedRef,
+  };
+};
+
+describe('PersonAttributeField', () => {
   beforeEach(() => {
-    fieldDefinition = {
+    mockUsePersonAttributeType.mockReturnValue({
+      data: mockPersonAttributeType,
+      isLoading: false,
+      error: null,
+    });
+  });
+
+  describe('Loading and error states', () => {
+    it('renders a skeleton if attribute type is loading', async () => {
+      mockUsePersonAttributeType.mockReturnValue({
+        data: null,
+        isLoading: true,
+        error: null,
+      });
+
+      const fieldDefinition: FieldDefinition = {
+        id: 'referredBy',
+        uuid: 'attribute-uuid',
+        label: 'Attribute',
+        showHeading: true,
+        type: 'person attribute',
+      };
+
+      renderPersonAttributeFieldWithFormik(fieldDefinition);
+
+      await screen.findByRole('heading', { name: /attribute/i });
+      expect(screen.queryByLabelText(/referred by/i)).not.toBeInTheDocument();
+    });
+
+    it('renders an error notification if unable to fetch attribute type', () => {
+      mockUsePersonAttributeType.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: new Error('Failed to fetch attribute type'),
+      });
+
+      const fieldDefinition: FieldDefinition = {
+        id: 'referredBy',
+        uuid: 'attribute-uuid',
+        label: 'Attribute',
+        showHeading: false,
+        type: 'person attribute',
+      };
+
+      renderPersonAttributeFieldWithFormik(fieldDefinition);
+
+      // Check for the specific error message text
+      expect(screen.getByText(/Unable to fetch person attribute type/i)).toBeInTheDocument();
+    });
+
+    it('renders an error notification if attribute type has unknown format', () => {
+      mockUsePersonAttributeType.mockReturnValue({
+        data: { ...mockPersonAttributeType, format: 'unknown' },
+        isLoading: false,
+        error: null,
+      });
+
+      const fieldDefinition: FieldDefinition = {
+        id: 'referredby',
+        label: 'Referred by',
+        type: 'person attribute',
+        uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
+        validation: {
+          matches: '',
+          required: true,
+        },
+        showHeading: true,
+      };
+
+      renderPersonAttributeFieldWithFormik(fieldDefinition);
+
+      // Check for the specific error message text
+      expect(screen.getByText(/Patient attribute type has unknown format/i)).toBeInTheDocument();
+      expect(screen.getByText(/unknown/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Heading display', () => {
+    it('shows heading when showHeading is true', () => {
+      const fieldDefinition: FieldDefinition = {
+        id: 'referredby',
+        label: 'Referred by',
+        type: 'person attribute',
+        uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
+        validation: {
+          matches: '',
+          required: true,
+        },
+        showHeading: true,
+      };
+
+      renderPersonAttributeFieldWithFormik(fieldDefinition);
+
+      expect(screen.getByRole('heading', { name: /referred by/i })).toBeInTheDocument();
+    });
+
+    it('does not show heading when showHeading is false', () => {
+      const fieldDefinition: FieldDefinition = {
+        id: 'referredby',
+        label: 'Referred by',
+        type: 'person attribute',
+        uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
+        validation: {
+          matches: '',
+          required: true,
+        },
+        showHeading: false,
+      };
+
+      renderPersonAttributeFieldWithFormik(fieldDefinition);
+
+      expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('String format (text input)', () => {
+    const textFieldDefinition: FieldDefinition = {
       id: 'referredby',
-      name: 'Referred by',
+      label: 'Referred by',
+      type: 'person attribute',
+      uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
+      validation: {
+        matches: '',
+        required: false,
+      },
+      showHeading: true,
+    };
+
+    it('renders a text input field for String format', () => {
+      renderPersonAttributeFieldWithFormik(textFieldDefinition);
+
+      const input = screen.getByRole('textbox', { name: /referred by/i });
+      expect(input).toBeInTheDocument();
+    });
+
+    it('allows user to enter text', async () => {
+      const user = userEvent.setup();
+      const { getFormValues } = renderPersonAttributeFieldWithFormik(textFieldDefinition);
+
+      const input = screen.getByRole('textbox', { name: /referred by/i }) as HTMLInputElement;
+      await user.type(input, 'Dr. Smith');
+
+      await waitFor(() => {
+        expect(getFormValues().attributes['4dd56a75-14ab-4148-8700-1f4f704dc5b0']).toBe('Dr. Smith');
+      });
+    });
+
+    it('renders as required when configured', () => {
+      renderPersonAttributeFieldWithFormik({
+        ...textFieldDefinition,
+        validation: {
+          matches: '',
+          required: true,
+        },
+      });
+
+      const input = screen.getByRole('textbox', { name: /referred by/i });
+      expect(input).toBeRequired();
+    });
+
+    it('renders as optional when not required', () => {
+      renderPersonAttributeFieldWithFormik(textFieldDefinition);
+
+      const input = screen.getByRole('textbox', { name: /referred by/i });
+      expect(input).not.toBeRequired();
+    });
+  });
+
+  describe('Concept format (coded select)', () => {
+    const codedFieldDefinition: FieldDefinition = {
+      id: 'referredby',
+      label: 'Referred by',
       type: 'person attribute',
       uuid: '4dd56a75-14ab-4148-8700-1f4f704dc5b0',
       answerConceptSetUuid: '6682d17f-0777-45e4-a39b-93f77eb3531c',
       validation: {
         matches: '',
-        required: true,
+        required: false,
       },
       showHeading: true,
     };
-    mockedUsePersonAttributeType.mockReturnValue({
-      data: mockPersonAttributeType,
-      isLoading: false,
-      error: null,
-      uuid: '14d4f066-15f5-102d-96e4-000c29c2a5d7d',
+
+    beforeEach(() => {
+      mockUsePersonAttributeType.mockReturnValue({
+        data: { ...mockPersonAttributeType, format: 'org.openmrs.Concept' },
+        isLoading: false,
+        error: null,
+      });
+
+      mockUseConceptAnswers.mockReturnValue({
+        data: [
+          { uuid: '1', display: 'Option 1' },
+          { uuid: '2', display: 'Option 2' },
+        ],
+        error: null,
+        isLoading: false,
+      });
+    });
+
+    it('renders a select field for Concept format', () => {
+      renderPersonAttributeFieldWithFormik(codedFieldDefinition);
+
+      const select = screen.getByRole('combobox', { name: /referred by/i });
+      expect(select).toBeInTheDocument();
+      expect(screen.getByText('Option 1')).toBeInTheDocument();
+      expect(screen.getByText('Option 2')).toBeInTheDocument();
+    });
+
+    it('allows user to select an option', async () => {
+      const user = userEvent.setup();
+      const { getFormValues } = renderPersonAttributeFieldWithFormik(codedFieldDefinition);
+
+      const select = screen.getByRole('combobox', { name: /referred by/i }) as HTMLSelectElement;
+      await user.selectOptions(select, '1');
+
+      await waitFor(() => {
+        expect(getFormValues().attributes['4dd56a75-14ab-4148-8700-1f4f704dc5b0']).toBe('1');
+      });
+      expect(select.value).toBe('1');
+    });
+
+    it('renders as required when configured', () => {
+      renderPersonAttributeFieldWithFormik({
+        ...codedFieldDefinition,
+        validation: {
+          matches: '',
+          required: true,
+        },
+      });
+
+      const select = screen.getByRole('combobox', { name: /referred by/i });
+      expect(select).toBeRequired();
+    });
+
+    it('renders as optional when not required', () => {
+      renderPersonAttributeFieldWithFormik(codedFieldDefinition);
+
+      const select = screen.getByRole('combobox', { name: /referred by/i });
+      expect(select).not.toBeRequired();
     });
   });
-
-  afterEach(() => {
-    jest.resetAllMocks();
-  });
-
-  it('renders the text input field for String format', () => {
-    render(
-      <Formik initialValues={{}} onSubmit={() => {}}>
-        <Form>
-          <PersonAttributeField fieldDefinition={fieldDefinition} />
-        </Form>
-      </Formik>,
-    );
-
-    const input = screen.getByLabelText(/Referred by/i) as HTMLInputElement;
-    expect(screen.getByRole('heading')).toBeInTheDocument();
-    expect(input).toBeInTheDocument();
-    expect(input.type).toBe('text');
-  });
-
-  it('should not show heading if showHeading is false', () => {
-    fieldDefinition = {
-      ...fieldDefinition,
+  describe.each(['org.openmrs.util.AttributableDate', 'java.util.Date'])('Date format (%s)', (format) => {
+    const uuid = 'd2a4f9a1-3c5e-4a7b-9b1d-6f8e2c4a1b3d';
+    const dateFieldDefinition: FieldDefinition = {
+      id: 'dateOfFirstVisit',
+      label: 'Date of first visit',
+      type: 'person attribute',
+      uuid,
       showHeading: false,
     };
 
-    render(
-      <Formik initialValues={{}} onSubmit={() => {}}>
-        <Form>
-          <PersonAttributeField fieldDefinition={fieldDefinition} />
-        </Form>
-      </Formik>,
-    );
-    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
-  });
-
-  it('renders the coded attribute field for Concept format', () => {
-    mockedUsePersonAttributeType.mockReturnValue({
-      data: { ...mockPersonAttributeType, format: 'org.openmrs.Concept' },
-      isLoading: false,
-      error: null,
+    beforeEach(() => {
+      mockUsePersonAttributeType.mockReturnValue({
+        data: { ...mockPersonAttributeType, uuid, format, display: 'Date of first visit', name: 'Date of first visit' },
+        isLoading: false,
+        error: null,
+      });
     });
 
-    fieldDefinition = {
-      id: 'referredby',
-      ...fieldDefinition,
-      label: 'Referred by',
-    };
+    it('saves the selected date in the YYYY-MM-DD format', async () => {
+      const { getFormValues } = renderPersonAttributeFieldWithFormik(dateFieldDefinition);
 
-    mockedUseConceptAnswers.mockReturnValueOnce({
-      data: [
-        { uuid: '1', display: 'Option 1' },
-        { uuid: '2', display: 'Option 2' },
-      ],
-      isLoading: false,
+      fireEvent.change(screen.getByLabelText('Date of first visit'), { target: { value: '2026-09-20' } });
+
+      await waitFor(() => expect(getFormValues().attributes[uuid]).toBe('2026-09-20'));
     });
 
-    render(
-      <Formik initialValues={{}} onSubmit={() => {}}>
-        <Form>
-          <PersonAttributeField fieldDefinition={fieldDefinition} />
-        </Form>
-      </Formik>,
-    );
+    it('marks the field as touched when a date is selected', async () => {
+      const { getFormTouched } = renderPersonAttributeFieldWithFormik(dateFieldDefinition);
 
-    const input = screen.getByLabelText(/Referred by/i) as HTMLInputElement;
-    expect(input).toBeInTheDocument();
-    expect(input.type).toBe('select-one');
-    expect(screen.getByText('Option 1')).toBeInTheDocument();
-    expect(screen.getByText('Option 2')).toBeInTheDocument();
-  });
+      fireEvent.change(screen.getByLabelText('Date of first visit'), { target: { value: '2026-09-20' } });
 
-  it('renders an error notification if attribute type has unknown format', () => {
-    mockedUsePersonAttributeType.mockReturnValue({
-      data: { ...mockPersonAttributeType, format: 'unknown' },
-      isLoading: false,
-      error: null,
+      await waitFor(() => expect(getFormTouched().attributes?.[uuid]).toBe(true));
     });
 
-    render(
-      <Formik initialValues={{}} onSubmit={() => {}}>
-        <Form>
-          <PersonAttributeField fieldDefinition={fieldDefinition} />
-        </Form>
-      </Formik>,
-    );
+    it('renders a saved date', () => {
+      renderPersonAttributeFieldWithFormik(dateFieldDefinition, { attributes: { [uuid]: '2026-09-20' } });
 
-    expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText(/Patient attribute type has unknown format/i)).toBeInTheDocument();
-  });
-  it('renders an error notification if unable to fetch attribute type', () => {
-    mockedUsePersonAttributeType.mockReturnValue({
-      data: null,
-      isLoading: false,
-      error: new Error('Failed to fetch attribute type'),
+      expect(screen.getByLabelText('Date of first visit')).toHaveValue('20/09/2026');
     });
 
-    fieldDefinition = {
-      uuid: 'attribute-uuid',
-      label: 'Attribute',
-      showHeading: false,
-    };
+    it('does not allow future dates when allowFutureDates is false', () => {
+      vi.mocked(OpenmrsDatePicker).mockClear();
+      renderPersonAttributeFieldWithFormik({ ...dateFieldDefinition, allowFutureDates: false });
 
-    render(
-      <Formik initialValues={{}} onSubmit={() => {}}>
-        <Form>
-          <PersonAttributeField fieldDefinition={fieldDefinition} />
-        </Form>
-      </Formik>,
-    );
-
-    expect(screen.getByText('Error')).toBeInTheDocument();
-    expect(screen.getByText(/Unable to fetch person attribute type/i)).toBeInTheDocument();
-  });
-
-  it('renders a skeleton if attribute type is loading', () => {
-    mockedUsePersonAttributeType.mockReturnValue({
-      data: null,
-      isLoading: true,
-      error: null,
+      const props = vi.mocked(OpenmrsDatePicker).mock.calls.at(-1)[0];
+      expect(props.maxDate).toBeInstanceOf(Date);
+      expect(props.minDate).toBeUndefined();
     });
-
-    fieldDefinition = {
-      uuid: 'attribute-uuid',
-      label: 'Attribute',
-      showHeading: true,
-    };
-
-    render(
-      <Formik initialValues={{}} onSubmit={() => {}}>
-        <Form>
-          <PersonAttributeField fieldDefinition={fieldDefinition} />
-        </Form>
-      </Formik>,
-    );
-    const input = screen.findByLabelText(/Reffered by/i);
-    expect(screen.getByText(/Attribute/i)).toBeInTheDocument();
-    expect(input).not.toBeNull(); // checks that the input is not rendered when the attribute type is loading
   });
 });

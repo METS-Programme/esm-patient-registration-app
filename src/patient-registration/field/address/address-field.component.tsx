@@ -1,39 +1,21 @@
-import React, { useEffect, useState, useContext, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ResourcesContext } from '../../../offline.resources';
 import { SkeletonText, InlineNotification } from '@carbon/react';
-import styles from '../field.scss';
-import { Input } from '../../input/basic-input/input/input.component';
 import { useConfig } from '@openmrs/esm-framework';
-import AddressSearchComponent from './address-search.component';
-import { PatientRegistrationContext } from '../../patient-registration-context';
 import { useOrderedAddressHierarchyLevels } from './address-hierarchy.resource';
+import { usePatientRegistrationContext } from '../../patient-registration-context';
+import { useResourcesContext } from '../../../resources-context';
+import { Input } from '../../input/basic-input/input/input.component';
 import AddressHierarchyLevels from './address-hierarchy-levels.component';
-
-function parseString(xmlDockAsString: string) {
-  const parser = new DOMParser();
-  return parser.parseFromString(xmlDockAsString, 'text/xml');
-}
+import AddressSearchComponent from './address-search.component';
+import styles from '../field.scss';
 
 export const AddressComponent: React.FC = () => {
-  const [selected, setSelected] = useState('');
-  const { addressTemplate } = useContext(ResourcesContext);
-  const addressLayout = useMemo(() => {
-    if (!addressTemplate?.lines) {
-      return [];
-    }
-    const allFields = addressTemplate?.lines?.flat();
-    const fields = allFields?.filter(({ isToken }) => isToken === 'IS_ADDR_TOKEN');
-
-    return fields.map(({ displayText, codeName }) => ({
-      id: codeName,
-      name: codeName,
-      label: displayText,
-    }));
-  }, [addressTemplate]);
-
-  const { t } = useTranslation();
   const config = useConfig();
+  const { t } = useTranslation();
+  const { setFieldValue } = usePatientRegistrationContext();
+  const { orderedFields, isLoadingFieldOrder, errorFetchingFieldOrder } = useOrderedAddressHierarchyLevels();
+
   const {
     fieldConfigurations: {
       address: {
@@ -42,8 +24,26 @@ export const AddressComponent: React.FC = () => {
     },
   } = config;
 
-  const { setFieldValue } = useContext(PatientRegistrationContext);
-  const { orderedFields, isLoadingFieldOrder, errorFetchingFieldOrder } = useOrderedAddressHierarchyLevels();
+  const { addressTemplate } = useResourcesContext();
+  const addressLayout = useMemo(() => {
+    if (!addressTemplate?.lines) {
+      return [];
+    }
+
+    const allFields = addressTemplate?.lines?.flat();
+    const fields = allFields?.filter(({ isToken }) => isToken === 'IS_ADDR_TOKEN');
+    const allRequiredFields = Object.fromEntries(addressTemplate?.requiredElements?.map((curr) => [curr, curr]) || []);
+    return fields.map(({ displayText, codeName }) => {
+      return {
+        id: codeName,
+        name: codeName,
+        label: displayText,
+        required: Boolean(allRequiredFields[codeName]),
+      };
+    });
+  }, [addressTemplate]);
+
+  const [selected, setSelected] = useState('');
 
   useEffect(() => {
     if (addressTemplate?.elementDefaults) {
@@ -58,17 +58,19 @@ export const AddressComponent: React.FC = () => {
       return [];
     }
 
-    const orderMap = Object.fromEntries(orderedFields.map((field, indx) => [field, indx]));
+    const orderMap = Object.fromEntries((orderedFields ?? []).map((field, indx) => [field, indx]));
 
     return [...addressLayout].sort(
       (existingField1, existingField2) => orderMap[existingField1.name] - orderMap[existingField2.name],
     );
   }, [isLoadingFieldOrder, errorFetchingFieldOrder, orderedFields, addressLayout]);
 
-  if (!addressTemplate) {
+  if (addressTemplate && !Object.keys(addressTemplate)?.length) {
     return (
       <AddressComponentContainer>
-        <SkeletonText />
+        <div role="progressbar" aria-label={t('loading', 'Loading')}>
+          <SkeletonText />
+        </div>
       </AddressComponentContainer>
     );
   }
@@ -82,7 +84,8 @@ export const AddressComponent: React.FC = () => {
             name={`address.${attributes.name}`}
             labelText={t(attributes.label)}
             id={attributes.name}
-            selected={selected}
+            value={selected}
+            required={attributes.required}
           />
         ))}
       </AddressComponentContainer>
@@ -92,7 +95,9 @@ export const AddressComponent: React.FC = () => {
   if (isLoadingFieldOrder) {
     return (
       <AddressComponentContainer>
-        <SkeletonText />
+        <div role="progressbar" aria-label={t('loading', 'Loading')}>
+          <SkeletonText />
+        </div>
       </AddressComponentContainer>
     );
   }
@@ -104,7 +109,7 @@ export const AddressComponent: React.FC = () => {
           style={{ margin: '0', minWidth: '100%' }}
           kind="error"
           lowContrast={true}
-          title={t('errorFetchingOrderedFields', 'Error occured fetching ordered fields for address hierarchy')}
+          title={t('errorFetchingOrderedFields', 'Error occurred fetching ordered fields for address hierarchy')}
         />
       </AddressComponentContainer>
     );
@@ -122,7 +127,8 @@ export const AddressComponent: React.FC = () => {
             name={`address.${attributes.name}`}
             labelText={t(attributes.label)}
             id={attributes.name}
-            selected={selected}
+            value={selected}
+            required={attributes.required}
           />
         ))
       )}
@@ -132,6 +138,7 @@ export const AddressComponent: React.FC = () => {
 
 const AddressComponentContainer = ({ children }) => {
   const { t } = useTranslation();
+
   return (
     <div>
       <h4 className={styles.productiveHeading02Light}>{t('addressHeader', 'Address')}</h4>

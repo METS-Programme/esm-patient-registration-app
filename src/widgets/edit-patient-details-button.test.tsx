@@ -1,36 +1,33 @@
 import React from 'react';
-import { render, fireEvent, screen } from '@testing-library/react';
-import EditPatientDetailsButton from './edit-patient-details-button.component';
+import { vi, describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/react';
 import { navigate } from '@openmrs/esm-framework';
-import { mockPatient } from '../../../../__mocks__/appointments.mock';
+import { mockPatient } from '__mocks__';
+import EditPatientDetailsButton from './edit-patient-details-button.component';
+
+const mockNavigate = vi.mocked(navigate);
 
 describe('EditPatientDetailsButton', () => {
   const patientUuid = mockPatient.uuid;
-  it('should navigate to the edit page when clicked', () => {
-    const mockNavigate = navigate as jest.Mock;
 
-    jest.mock('@openmrs/esm-framework', () => {
-      const originalModule = jest.requireActual('@openmrs/esm-framework');
-      return {
-        ...originalModule,
-      };
-    });
+  it('renders button with correct text', () => {
+    render(<EditPatientDetailsButton patientUuid={patientUuid} />);
 
+    expect(screen.getByRole('menuitem')).toBeInTheDocument();
+    expect(screen.getByText(/edit patient details/i)).toBeInTheDocument();
+  });
+
+  it('navigates to edit page when clicked', async () => {
+    const user = userEvent.setup();
     render(<EditPatientDetailsButton patientUuid={patientUuid} />);
 
     const button = screen.getByRole('menuitem');
-    fireEvent.click(button);
+    await user.click(button);
 
-    expect(mockNavigate).toHaveBeenCalledWith({ to: expect.stringContaining(`/patient/${patientUuid}/edit`) });
-  });
-
-  it('should call the onTransition function when provided', () => {
-    const onTransitionMock = jest.fn();
-    render(<EditPatientDetailsButton patientUuid={patientUuid} onTransition={onTransitionMock} />);
-
-    const button = screen.getByRole('menuitem');
-    fireEvent.click(button);
-
-    expect(onTransitionMock).toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: expect.stringContaining(`/patient/${patientUuid}/edit`),
+    });
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
   });
 });

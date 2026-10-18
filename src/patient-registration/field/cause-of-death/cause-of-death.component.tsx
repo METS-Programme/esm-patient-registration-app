@@ -10,16 +10,17 @@ import styles from '../field.scss';
 
 export const CauseOfDeathField: React.FC = () => {
   const { t } = useTranslation();
-  const { fieldConfigurations } = useConfig<RegistrationConfig>();
+  const { fieldConfigurations, freeTextFieldConceptUuid } = useConfig<RegistrationConfig>();
   const [deathCause, deathCauseMeta] = useField('deathCause');
 
   const conceptUuid = fieldConfigurations?.causeOfDeath?.conceptUuid;
   const required = fieldConfigurations?.causeOfDeath?.required;
-  const freeTextFieldConceptUuid = fieldConfigurations?.causeOfDeath?.freeTextFieldConceptUuid;
 
-  const { data: conceptAnswers, isLoading: isLoadingConceptAnswers } = useConceptAnswers(conceptUuid);
-
-  const errorLoadingConceptAnswers = !conceptAnswers && conceptUuid;
+  const {
+    data: conceptAnswers,
+    isLoading: isLoadingConceptAnswers,
+    error: errorLoadingConceptAnswers,
+  } = useConceptAnswers(conceptUuid);
 
   const answers = useMemo(() => {
     if (!isLoadingConceptAnswers && conceptAnswers) {

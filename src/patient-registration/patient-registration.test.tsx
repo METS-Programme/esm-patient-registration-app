@@ -1,75 +1,158 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The form-submit flow under test does not fire its callback under happy-dom
+ * (likely a DOM-event-dispatch divergence). Run this file under jsdom.
+ */
 import React from 'react';
-import { BrowserRouter as Router, useParams } from 'react-router-dom';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { vi, describe, it, expect, test, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { showToast, useConfig, usePatient } from '@openmrs/esm-framework';
-import { FormManager } from './form-manager';
+import { useParams } from 'react-router-dom';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  type FetchResponse,
+  getDefaultsFromConfigSchema,
+  showSnackbar,
+  useConfig,
+  usePatient,
+} from '@openmrs/esm-framework';
+import type { AddressTemplate, Encounter, FormValues } from './patient-registration.types';
+import { mockedAddressTemplate } from '__mocks__';
+import { mockPatient, renderWithContext } from 'tools';
 import { saveEncounter, savePatient } from './patient-registration.resource';
-import { Encounter } from './patient-registration-types';
-import { Resources, ResourcesContext } from '../offline.resources';
+import { esmPatientRegistrationSchema, type RegistrationConfig } from '../config-schema';
+import { FormManager, SavePatientTransactionManager, type SavePatientForm } from './form-manager';
 import { PatientRegistration } from './patient-registration.component';
-import { RegistrationConfig } from '../config-schema';
-import { mockedAddressTemplate } from './field/address/tests/mocks';
-import { mockPatient } from '../../../../tools/test-helpers';
+import { useInitialFormValues } from './patient-registration-hooks';
+import { ResourcesContextProvider } from '../resources-context';
 
-const mockedUseConfig = useConfig as jest.Mock;
-const mockedUsePatient = usePatient as jest.Mock;
-const mockedSaveEncounter = saveEncounter as jest.Mock;
-const mockedSavePatient = savePatient as jest.Mock;
-const mockedShowToast = showToast as jest.Mock;
+const mockSaveEncounter = vi.mocked(saveEncounter);
+const mockSavePatient = vi.mocked(savePatient);
+const mockShowSnackbar = vi.mocked(showSnackbar);
+const mockUseConfig = vi.mocked(useConfig<RegistrationConfig>);
+const mockUsePatient = vi.mocked(usePatient);
+const mockUseParams = vi.mocked(useParams);
+const mockUseInitialFormValues = vi.mocked(useInitialFormValues);
 
-jest.mock('@openmrs/esm-framework', () => {
-  const originalModule = jest.requireActual('@openmrs/esm-framework');
+vi.mock('./field/field.resource', () => ({
+  useConcept: vi.fn().mockImplementation((uuid: string) => {
+    let data;
+    if (uuid === 'weight-uuid') {
+      data = {
+        uuid: 'weight-uuid',
+        display: 'Weight (kg)',
+        datatype: { display: 'Numeric', uuid: 'num' },
+        answers: [],
+        setMembers: [],
+      };
+    } else if (uuid === 'chief-complaint-uuid') {
+      data = {
+        uuid: 'chief-complaint-uuid',
+        display: 'Chief Complaint',
+        datatype: { display: 'Text', uuid: 'txt' },
+        answers: [],
+        setMembers: [],
+      };
+    } else if (uuid === 'nationality-uuid') {
+      data = {
+        uuid: 'nationality-uuid',
+        display: 'Nationality',
+        datatype: { display: 'Coded', uuid: 'cdd' },
+        answers: [
+          { display: 'USA', uuid: 'usa' },
+          { display: 'Mexico', uuid: 'mex' },
+        ],
+        setMembers: [],
+      };
+    }
+    return {
+      data: data ?? null,
+      isLoading: !data,
+    };
+  }),
+  useConceptAnswers: vi.fn().mockImplementation((uuid: string) => {
+    if (uuid === 'nationality-uuid') {
+      return {
+        data: [
+          { display: 'USA', uuid: 'usa' },
+          { display: 'Mexico', uuid: 'mex' },
+        ],
+        isLoading: false,
+      };
+    } else if (uuid === 'other-countries-uuid') {
+      return {
+        data: [
+          { display: 'Kenya', uuid: 'ke' },
+          { display: 'Uganda', uuid: 'ug' },
+        ],
+        isLoading: false,
+      };
+    }
+  }),
+}));
 
-  return {
-    ...originalModule,
-    validator: jest.fn(),
-  };
-});
-
-// Mock field.resource using the manual mock (in __mocks__)
-jest.mock('./field/field.resource');
-
-jest.mock('react-router-dom', () => ({
-  ...(jest.requireActual('react-router-dom') as any),
+vi.mock('react-router-dom', async () => ({
+  ...((await vi.importActual('react-router-dom')) as object),
   useLocation: () => ({
     pathname: 'openmrs/spa/patient-registration',
   }),
   useHistory: () => [],
-  useParams: jest.fn().mockReturnValue({ patientUuid: undefined }),
+  useParams: vi.fn().mockReturnValue({ patientUuid: undefined }),
 }));
 
-jest.mock('./patient-registration.resource', () => {
-  const originalModule = jest.requireActual('./patient-registration.resource');
+vi.mock('./patient-registration.resource', async () => ({
+  ...((await vi.importActual('./patient-registration.resource')) as object),
+  saveEncounter: vi.fn(),
+  savePatient: vi.fn(),
+}));
+
+vi.mock('./patient-registration-hooks', async () => {
+  const actual = (await vi.importActual('./patient-registration-hooks')) as object;
+  const defaultInitialFormValues = {
+    additionalFamilyName: '',
+    additionalGivenName: '',
+    additionalMiddleName: '',
+    addNameInLocalLanguage: false,
+    address: {},
+    birthdate: '',
+    birthdateEstimated: false,
+    deathCause: '',
+    deathDate: undefined,
+    deathTime: undefined,
+    deathTimeFormat: 'AM',
+    familyName: '',
+    gender: '',
+    givenName: '',
+    identifiers: {},
+    isDead: false,
+    middleName: '',
+    monthsEstimated: 0,
+    nonCodedCauseOfDeath: '',
+    patientUuid: 'new-patient-uuid',
+    relationships: [],
+    telephoneNumber: '',
+    yearsEstimated: 0,
+  } as FormValues;
 
   return {
-    ...originalModule,
-    saveEncounter: jest.fn(),
-    savePatient: jest.fn(),
-  };
-});
-
-jest.mock('@openmrs/esm-framework', () => {
-  const originalModule = jest.requireActual('@openmrs/esm-framework');
-
-  return {
-    ...originalModule,
-    validator: jest.fn(),
+    ...actual,
+    useInitialFormValues: vi.fn().mockReturnValue([defaultInitialFormValues, vi.fn()]),
+    usePatientUuidMap: vi.fn().mockReturnValue([{}, vi.fn()]),
   };
 });
 
 const mockResourcesContextValue = {
-  addressTemplate: mockedAddressTemplate,
+  addressTemplate: mockedAddressTemplate as AddressTemplate,
   currentSession: {
     authenticated: true,
     sessionId: 'JSESSION',
     currentProvider: { uuid: 'provider-uuid', identifier: 'PRO-123' },
   },
-  relationshipTypes: [],
+  relationshipTypes: { results: [] },
   identifierTypes: [],
-} as Resources;
+};
 
-let mockOpenmrsConfig: RegistrationConfig = {
+const mockOpenmrsConfig: RegistrationConfig = {
   sections: ['demographics', 'contact'],
   sectionDefinitions: [
     { id: 'demographics', name: 'Demographics', fields: ['name', 'gender', 'dob'] },
@@ -78,6 +161,17 @@ let mockOpenmrsConfig: RegistrationConfig = {
   ],
   fieldDefinitions: [],
   fieldConfigurations: {
+    phone: {
+      personAttributeUuid: '14d4f066-15f5-102d-96e4-000c29c2a5d7',
+    },
+    dateOfBirth: {
+      allowEstimatedDateOfBirth: true,
+      useEstimatedDateOfBirth: {
+        enabled: true,
+        dayOfMonth: new Date().getDate(),
+        month: new Date().getMonth(),
+      },
+    },
     name: {
       displayMiddleName: true,
       allowUnidentifiedPatients: true,
@@ -88,9 +182,12 @@ let mockOpenmrsConfig: RegistrationConfig = {
     },
     gender: [
       {
-        value: 'Male',
+        value: 'male',
         label: 'Male',
-        id: 'male',
+      },
+      {
+        value: 'female',
+        label: 'Female',
       },
     ],
     address: {
@@ -100,9 +197,9 @@ let mockOpenmrsConfig: RegistrationConfig = {
         searchAddressByLevel: true,
       },
     },
-  },
-  concepts: {
-    patientPhotoUuid: '736e8771-e501-4615-bfa7-570c03f4bef5',
+    causeOfDeath: {
+      conceptUuid: 'cause-of-death-concept-uuid',
+    },
   },
   links: {
     submitButton: '#',
@@ -113,11 +210,10 @@ let mockOpenmrsConfig: RegistrationConfig = {
     encounterProviderRoleUuid: 'asdf',
     registrationFormUuid: null,
   },
+  freeTextFieldConceptUuid: '',
 };
-
-const path = `/patient/:patientUuid/edit`;
-
 const configWithObs = JSON.parse(JSON.stringify(mockOpenmrsConfig));
+
 configWithObs.fieldDefinitions = [
   {
     id: 'weight',
@@ -127,6 +223,7 @@ configWithObs.fieldDefinitions = [
     placeholder: '',
     validation: { required: false, matches: null },
     answerConceptSetUuid: null,
+    customConceptAnswers: [],
   },
   {
     id: 'chief complaint',
@@ -136,6 +233,7 @@ configWithObs.fieldDefinitions = [
     placeholder: '',
     validation: { required: false, matches: null },
     answerConceptSetUuid: null,
+    customConceptAnswers: [],
   },
   {
     id: 'nationality',
@@ -145,6 +243,7 @@ configWithObs.fieldDefinitions = [
     placeholder: '',
     validation: { required: false, matches: null },
     answerConceptSetUuid: null,
+    customConceptAnswers: [],
   },
 ];
 configWithObs.sectionDefinitions?.push({
@@ -161,279 +260,456 @@ const fillRequiredFields = async () => {
   const demographicsSection = await screen.findByLabelText('Demographics Section');
   const givenNameInput = within(demographicsSection).getByLabelText(/first/i) as HTMLInputElement;
   const familyNameInput = within(demographicsSection).getByLabelText(/family/i) as HTMLInputElement;
-  const dateOfBirthInput = within(demographicsSection).getByLabelText(/date of birth/i) as HTMLInputElement;
-  const genderInput = within(demographicsSection).getByLabelText(/Male/) as HTMLSelectElement;
 
   await user.type(givenNameInput, 'Paul');
   await user.type(familyNameInput, 'Gaihre');
-  await user.clear(dateOfBirthInput);
-  await user.type(dateOfBirthInput, '02/08/1993');
-  user.click(genderInput);
+
+  // Set birthdate using the date picker's public API
+  let dateOfBirthInput: HTMLInputElement;
+  const birthDateString = '1993-08-02';
+
+  try {
+    // Approach 1: Find as textbox (like appointments test)
+    dateOfBirthInput = within(demographicsSection).getByRole('textbox', { name: /date of birth/i }) as HTMLInputElement;
+  } catch (e) {
+    // Approach 2: Find by label
+    dateOfBirthInput = within(demographicsSection).getByLabelText(/date of birth/i) as HTMLInputElement;
+  }
+
+  fireEvent.change(dateOfBirthInput, { target: { value: birthDateString } });
+  fireEvent.blur(dateOfBirthInput);
+
+  const genderInput = within(demographicsSection).getByLabelText(/Male/) as HTMLSelectElement;
+  await user.click(genderInput);
 };
 
-describe('patient registration component', () => {
-  xdescribe('when registering a new patient', () => {
-    beforeEach(() => {
-      mockedUseConfig.mockReturnValue(mockOpenmrsConfig);
-      mockedSavePatient.mockReturnValue({ data: { uuid: 'new-pt-uuid' }, ok: true });
-      mockedSaveEncounter.mockClear();
-      mockedShowToast.mockClear();
-      jest.clearAllMocks();
+const renderWithOptionalPreferredSsn = (savePatientForm: SavePatientForm = vi.fn()) => {
+  const defaultConfig = getDefaultsFromConfigSchema<RegistrationConfig>(esmPatientRegistrationSchema);
+  mockUseConfig.mockReturnValue({
+    ...defaultConfig,
+    ...mockOpenmrsConfig,
+    sectionDefinitions: [
+      { id: 'demographics', name: 'Demographics', fields: ['name', 'gender', 'dob', 'id'] },
+      { id: 'contact', name: 'Contact Info', fields: ['address'] },
+    ],
+    defaultPatientIdentifierTypes: ['ssn-uuid'],
+    fieldConfigurations: {
+      ...defaultConfig.fieldConfigurations,
+      ...mockOpenmrsConfig.fieldConfigurations,
+      identifier: { allowPreferredSelection: true },
+    },
+  });
+  renderWithContext(<PatientRegistration savePatientForm={savePatientForm} />, ResourcesContextProvider, {
+    ...mockResourcesContextValue,
+    identifierTypes: [
+      {
+        uuid: 'ssn-uuid',
+        name: 'SSN',
+        fieldName: 'ssn',
+        format: null,
+        formatDescription: null,
+        isPrimary: false,
+        required: false,
+        uniquenessBehavior: null,
+        identifierSources: [],
+      },
+    ],
+  });
+};
+
+describe('Registering a new patient', () => {
+  beforeEach(() => {
+    mockUseConfig.mockReturnValue({
+      ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+      ...mockOpenmrsConfig,
     });
-
-    it('renders without crashing', () => {
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={jest.fn()} />
-          </Router>
-          ,
-        </ResourcesContext.Provider>,
-      );
-    });
-
-    it('has the expected sections', async () => {
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={jest.fn()} />
-          </Router>
-        </ResourcesContext.Provider>,
-      );
-      await waitFor(() => expect(screen.getByLabelText(/Demographics Section/)).not.toBeNull());
-      expect(screen.getByLabelText(/Contact Info Section/)).not.toBeNull();
-    });
-
-    it('saves the patient without extra info', async () => {
-      const user = userEvent.setup();
-
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={FormManager.savePatientFormOnline} />
-          </Router>
-        </ResourcesContext.Provider>,
-      );
-
-      await fillRequiredFields();
-      await user.click(await screen.findByText('Register Patient'));
-      await waitFor(() => {
-        expect(mockedSavePatient).toHaveBeenCalledWith(
-          expect.objectContaining({
-            identifiers: [], //TODO when the identifer story is finished: { identifier: '', identifierType: '05a29f94-c0ed-11e2-94be-8c13b969e334', location: '' },
-            person: {
-              addresses: expect.arrayContaining([expect.any(Object)]),
-              attributes: [],
-              birthdate: '1993-8-2',
-              birthdateEstimated: false,
-              gender: 'M',
-              names: [{ givenName: 'Paul', middleName: '', familyName: 'Gaihre', preferred: true, uuid: undefined }],
-              dead: false,
-              uuid: expect.anything(),
-            },
-            uuid: expect.anything(),
-          }),
-          undefined,
-        );
-      });
-    });
-
-    it('should not save the patient if validation fails', async () => {
-      const user = userEvent.setup();
-
-      const mockedSavePatientForm = jest.fn();
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={mockedSavePatientForm} />
-          </Router>
-        </ResourcesContext.Provider>,
-      );
-
-      const givenNameInput = (await screen.findByLabelText('First Name')) as HTMLInputElement;
-
-      await user.type(givenNameInput, '5');
-      await user.click(screen.getByText('Register Patient'));
-
-      expect(mockedSavePatientForm).not.toHaveBeenCalled();
-    });
-
-    xit('renders and saves registration obs', async () => {
-      const user = userEvent.setup();
-
-      mockedSaveEncounter.mockResolvedValue({});
-      mockedUseConfig.mockReturnValue(configWithObs);
-
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={FormManager.savePatientFormOnline} />
-          </Router>
-        </ResourcesContext.Provider>,
-      );
-
-      await fillRequiredFields();
-      const customSection = screen.getByLabelText('Custom Section');
-      const weight = within(customSection).getByLabelText('Weight (kg) (optional)');
-      await user.type(weight, '50');
-      const complaint = within(customSection).getByLabelText('Chief Complaint (optional)');
-      await user.type(complaint, 'sad');
-      const nationality = within(customSection).getByLabelText('Nationality');
-      await user.selectOptions(nationality, 'USA');
-
-      await user.click(screen.getByText('Register Patient'));
-
-      await waitFor(() => expect(mockedSavePatient).toHaveBeenCalled());
-      await waitFor(() =>
-        expect(mockedSaveEncounter).toHaveBeenCalledWith(
-          expect.objectContaining<Partial<Encounter>>({
-            encounterType: 'reg-enc-uuid',
-            patient: 'new-pt-uuid',
-            obs: [
-              { concept: 'weight-uuid', value: 50 },
-              { concept: 'chief-complaint-uuid', value: 'sad' },
-              { concept: 'nationality-uuid', value: 'usa' },
-            ],
-          }),
-        ),
-      );
-    });
-
-    xit('retries saving registration obs after a failed attempt', async () => {
-      const user = userEvent.setup();
-
-      mockedUseConfig.mockReturnValue(configWithObs);
-
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={FormManager.savePatientFormOnline} />
-          </Router>
-        </ResourcesContext.Provider>,
-      );
-
-      await fillRequiredFields();
-      const customSection = screen.getByLabelText('Custom Section');
-      const weight = within(customSection).getByLabelText('Weight (kg) (optional)');
-      await user.type(weight, '-999');
-
-      mockedSaveEncounter.mockRejectedValue({ status: 400, responseBody: { error: { message: 'an error message' } } });
-
-      await user.click(screen.getByText('Register Patient'));
-
-      await waitFor(() => expect(mockedSavePatient).toHaveBeenCalled());
-      await waitFor(() => expect(mockedSaveEncounter).toHaveBeenCalled());
-      await waitFor(() =>
-        expect(mockedShowToast).toHaveBeenCalledWith(expect.objectContaining({ description: 'an error message' })),
-      );
-
-      mockedSaveEncounter.mockResolvedValue({});
-
-      await user.click(screen.getByText('Register Patient'));
-      await waitFor(() => expect(mockedSavePatient).toHaveBeenCalled());
-      await waitFor(() => expect(mockedSaveEncounter).toHaveBeenCalled());
-      await waitFor(() => expect(mockedShowToast).toHaveBeenCalledWith(expect.objectContaining({ kind: 'success' })));
-    });
+    mockSavePatient.mockResolvedValue({ data: { uuid: 'new-pt-uuid' }, ok: true } as any);
   });
 
-  xdescribe('when updating an existing patient details', () => {
-    beforeEach(() => {
-      mockedUseConfig.mockReturnValue(mockOpenmrsConfig);
-      mockedSavePatient.mockReturnValue({ data: { uuid: 'new-pt-uuid' }, ok: true });
-      mockedSaveEncounter.mockClear();
-      mockedShowToast.mockClear();
-      jest.clearAllMocks();
+  it('should render all the required fields and sections', async () => {
+    renderWithContext(
+      <PatientRegistration savePatientForm={vi.fn()} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await screen.findByRole('heading', { name: /create new patient/i });
+
+    const demographicSection = screen.getByRole('region', { name: /demographics section/i });
+    const contactSection = screen.getByRole('region', { name: /contact info section/i });
+
+    expect(demographicSection).toBeInTheDocument();
+    expect(contactSection).toBeInTheDocument();
+    expect(screen.getByText(/jump to/i)).toBeInTheDocument();
+    expect(within(demographicSection).getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(within(demographicSection).getByLabelText(/middle name \(optional\)/i)).toBeInTheDocument();
+    expect(within(demographicSection).getByLabelText(/family name/i)).toBeInTheDocument();
+    const dateOfBirthInput = within(demographicSection).getByLabelText(/date of birth/i);
+    expect(dateOfBirthInput).toBeInTheDocument();
+    expect(within(demographicSection).getByRole('radio', { name: /^male$/i })).toBeInTheDocument();
+    expect(within(demographicSection).getByRole('radio', { name: /^female$/i })).toBeInTheDocument();
+    expect(within(demographicSection).getByText(/date of birth known\?/i)).toBeInTheDocument();
+
+    expect(within(contactSection).getByRole('heading', { name: /address/i })).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: /register patient/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+  });
+
+  it('saves the patient without extra info', async () => {
+    const user = userEvent.setup();
+
+    renderWithContext(
+      <PatientRegistration savePatientForm={FormManager.savePatientFormOnline} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await fillRequiredFields();
+    const registerButton = await screen.findByRole('button', { name: /register patient/i });
+    await user.click(registerButton);
+    expect(mockSavePatient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identifiers: [], // Note: Identifier story may need test data update when complete
+        person: {
+          addresses: expect.arrayContaining([expect.any(Object)]),
+          attributes: [],
+          birthdate: '1993-8-2',
+          birthdateEstimated: false,
+          gender: expect.stringMatching(/^M$/),
+          names: [{ givenName: 'Paul', middleName: '', familyName: 'Gaihre', preferred: true, uuid: undefined }],
+          dead: false,
+          deathDate: null,
+          causeOfDeath: null,
+          causeOfDeathNonCoded: null,
+          uuid: expect.anything(),
+        },
+        uuid: expect.anything(),
+      }),
+      undefined,
+    );
+  });
+
+  it('should not save the patient if validation fails', async () => {
+    const user = userEvent.setup();
+    const mockSavePatientForm = vi.fn();
+
+    renderWithContext(
+      <PatientRegistration savePatientForm={mockSavePatientForm} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await screen.findByRole('heading', { name: /create new patient/i });
+    await user.click(screen.getByRole('button', { name: /register patient/i }));
+
+    expect(mockSavePatientForm).not.toHaveBeenCalled();
+  });
+
+  it('shows the missing-value error as soon as an empty identifier is marked as preferred', async () => {
+    const user = userEvent.setup();
+    renderWithOptionalPreferredSsn();
+
+    await user.click(await screen.findByRole('radio', { name: /mark ssn as preferred/i }));
+
+    const ssnInput = screen.getByRole('textbox', { name: 'SSN' });
+    expect(await screen.findByText('Identifier value is required')).toBeInTheDocument();
+    expect(ssnInput).toHaveAttribute('aria-invalid', 'true');
+
+    await user.type(ssnInput, '123-45-6789');
+
+    await waitFor(() => expect(screen.queryByText('Identifier value is required')).not.toBeInTheDocument());
+    expect(ssnInput).not.toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('explains on the field why an empty preferred identifier blocks registration', async () => {
+    const user = userEvent.setup();
+    const mockSavePatientForm = vi.fn();
+    renderWithOptionalPreferredSsn(mockSavePatientForm);
+
+    await fillRequiredFields();
+    await user.click(await screen.findByRole('radio', { name: /mark ssn as preferred/i }));
+    await user.click(screen.getByRole('button', { name: /register patient/i }));
+
+    const ssnInput = await screen.findByRole('textbox', { name: 'SSN' });
+    expect(screen.queryByRole('textbox', { name: /ssn \(optional\)/i })).not.toBeInTheDocument();
+    expect(await screen.findByText('Identifier value is required')).toBeInTheDocument();
+    expect(ssnInput).toHaveAttribute('aria-invalid', 'true');
+    expect(mockSavePatientForm).not.toHaveBeenCalled();
+  });
+
+  it('renders and saves registration obs', async () => {
+    const user = userEvent.setup();
+
+    mockSaveEncounter.mockResolvedValue({} as unknown as FetchResponse);
+    mockUseConfig.mockReturnValue(configWithObs);
+
+    renderWithContext(
+      <PatientRegistration savePatientForm={FormManager.savePatientFormOnline} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await fillRequiredFields();
+    const customSection = screen.getByLabelText('Custom Section');
+    const weight = within(customSection).getByLabelText('Weight (kg) (optional)');
+    await user.type(weight, '50');
+    const complaint = within(customSection).getByLabelText('Chief Complaint (optional)');
+    await user.type(complaint, 'sad');
+    const nationality = within(customSection).getByLabelText('Nationality');
+    await user.selectOptions(nationality, 'USA');
+
+    const registerButton = await screen.findByRole('button', { name: /register patient/i });
+    await user.click(registerButton);
+
+    expect(mockSavePatient).toHaveBeenCalled();
+
+    expect(mockSaveEncounter).toHaveBeenCalledWith(
+      expect.objectContaining<Partial<Encounter>>({
+        encounterType: 'reg-enc-uuid',
+        patient: 'new-pt-uuid',
+        obs: [
+          { concept: 'weight-uuid', value: 50 },
+          { concept: 'chief-complaint-uuid', value: 'sad' },
+          { concept: 'nationality-uuid', value: 'usa' },
+        ],
+      }),
+    );
+  });
+
+  it('retries saving registration obs after a failed attempt', async () => {
+    const user = userEvent.setup();
+
+    mockUseConfig.mockReturnValue(configWithObs);
+
+    renderWithContext(
+      <PatientRegistration savePatientForm={FormManager.savePatientFormOnline} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await fillRequiredFields();
+    const customSection = screen.getByLabelText('Custom Section');
+    const weight = within(customSection).getByLabelText('Weight (kg) (optional)');
+    await user.type(weight, '-999');
+
+    mockSaveEncounter.mockRejectedValue({ status: 400, responseBody: { error: { message: 'an error message' } } });
+
+    const registerPatientButton = await screen.findByRole('button', { name: /register patient/i });
+
+    await user.click(registerPatientButton);
+
+    expect(mockSavePatient).toHaveBeenCalledTimes(1);
+    expect(mockSaveEncounter).toHaveBeenCalledTimes(1);
+
+    expect(mockShowSnackbar).toHaveBeenCalledWith(expect.objectContaining({ subtitle: 'an error message' }));
+    mockSaveEncounter.mockResolvedValue({} as FetchResponse);
+
+    await user.click(registerPatientButton);
+    expect(mockSavePatient).toHaveBeenCalledTimes(2);
+    expect(mockSaveEncounter).toHaveBeenCalledTimes(2);
+
+    expect(mockShowSnackbar).toHaveBeenCalledWith(expect.objectContaining({ kind: 'success' }));
+  });
+});
+
+describe('Updating an existing patient record', () => {
+  beforeEach(() => {
+    mockUseConfig.mockReturnValue({
+      ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+      ...mockOpenmrsConfig,
     });
-
-    it('edits patient demographics', async () => {
-      const user = userEvent.setup();
-
-      mockedSavePatient.mockResolvedValue({});
-
-      const mockedUseParams = useParams as jest.Mock;
-
-      mockedUseParams.mockReturnValue({ patientUuid: mockPatient.id });
-
-      mockedUsePatient.mockReturnValue({
+    mockUsePatient.mockImplementation(() => {
+      return {
+        error: null,
         isLoading: false,
         patient: mockPatient,
         patientUuid: mockPatient.id,
-        error: null,
-      });
-
-      render(
-        <ResourcesContext.Provider value={mockResourcesContextValue}>
-          <Router>
-            <PatientRegistration isOffline={false} savePatientForm={mockedSavePatient} />
-          </Router>
-        </ResourcesContext.Provider>,
-      );
-
-      const givenNameInput: HTMLInputElement = screen.getByLabelText(/First Name/);
-      const familyNameInput: HTMLInputElement = screen.getByLabelText(/Family Name/);
-      const middleNameInput: HTMLInputElement = screen.getByLabelText(/Middle Name/);
-      const dateOfBirthInput: HTMLInputElement = screen.getByLabelText('Date of Birth');
-      const genderInput: HTMLInputElement = screen.getByLabelText(/Male/);
-
-      // assert initial values
-      expect(givenNameInput.value).toBe('John');
-      expect(familyNameInput.value).toBe('Wilson');
-      expect(middleNameInput.value).toBeFalsy();
-      expect(dateOfBirthInput.value).toBe('4/4/1972');
-      expect(genderInput.value).toBe('Male');
-
-      // do some edits
-      await user.clear(givenNameInput);
-      await user.clear(middleNameInput);
-      await user.clear(familyNameInput);
-      await user.type(givenNameInput, 'Eric');
-      await user.type(middleNameInput, 'Johnson');
-      await user.type(familyNameInput, 'Smith');
-      await user.click(screen.getByText('Update Patient'));
-
-      await waitFor(() =>
-        expect(mockedSavePatient).toHaveBeenCalledWith(
-          false,
-          {
-            '0': {
-              oldIdentificationNumber: '100732HE',
-            },
-            '1': {
-              openMrsId: '100GEJ',
-            },
-            addNameInLocalLanguage: undefined,
-            additionalFamilyName: '',
-            additionalGivenName: '',
-            additionalMiddleName: '',
-            address: {},
-            birthdate: new Date('1972-04-04T00:00:00.000Z'),
-            birthdateEstimated: false,
-            deathCause: '',
-            deathDate: '',
-            familyName: 'Smith',
-            gender: 'Male',
-            givenName: 'Eric',
-            identifiers: {},
-            isDead: false,
-            middleName: 'Johnson',
-            monthsEstimated: 0,
-            patientUuid: '8673ee4f-e2ab-4077-ba55-4980f408773e',
-            relationships: [],
-            telephoneNumber: '',
-            unidentifiedPatient: undefined,
-            yearsEstimated: 0,
-          },
-          expect.anything(),
-          expect.anything(),
-          null,
-          undefined,
-          expect.anything(),
-          expect.anything(),
-          expect.anything(),
-          { patientSaved: false },
-          expect.anything(),
-        ),
-      );
+      };
     });
+    mockSavePatient.mockResolvedValue({ data: { uuid: 'new-pt-uuid' }, ok: true } as any);
+    mockUseParams.mockReturnValue({ patientUuid: mockPatient.id });
+
+    mockUseInitialFormValues.mockReturnValue([
+      {
+        additionalFamilyName: '',
+        additionalGivenName: '',
+        additionalMiddleName: '',
+        addNameInLocalLanguage: false,
+        address: {},
+        birthdate: mockPatient.birthDate,
+        birthdateEstimated: false,
+        deathCause: '',
+        deathDate: undefined,
+        deathTime: undefined,
+        deathTimeFormat: 'AM',
+        familyName: mockPatient.name[0].family,
+        gender: mockPatient.gender,
+        givenName: mockPatient.name[0].given[0],
+        identifiers: {
+          openMrsId: {
+            autoGeneration: false,
+            identifierName: 'OpenMRS ID',
+            identifierTypeUuid: '05a29f94-c0ed-11e2-94be-8c13b969e334',
+            identifierUuid: '1f0ad7a1-430f-4397-b571-59ea654a52db',
+            identifierValue: '100GEJ',
+            initialValue: '100GEJ',
+            preferred: true,
+            required: true,
+            selectedSource: null,
+          },
+          idCard: {
+            autoGeneration: false,
+            identifierName: 'ID Card',
+            identifierTypeUuid: 'b4143563-16cd-4439-b288-f83d61670fc8',
+            identifierUuid: '346d09b1-8509-43c6-9697-3b4d1ce06ad6',
+            identifierValue: '1234567890',
+            initialValue: '1234567890',
+            preferred: false,
+            required: false,
+            selectedSource: null,
+          },
+        },
+        isDead: false,
+        middleName: '',
+        monthsEstimated: 0,
+        nonCodedCauseOfDeath: '',
+        patientUuid: mockPatient.id,
+        relationships: [],
+        telephoneNumber: '',
+        yearsEstimated: 0,
+      } as FormValues,
+      vi.fn(),
+    ]);
   });
+
+  it('edits patient demographics', async () => {
+    const user = userEvent.setup();
+    const mockSavePatientForm = vi.fn();
+
+    renderWithContext(
+      <PatientRegistration savePatientForm={mockSavePatientForm} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await screen.findByRole('heading', { name: /edit patient details/i });
+
+    expect(screen.queryByRole('button', { name: /register patient/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /update patient/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+
+    expect(screen.getByLabelText(/first name/i)).toHaveValue(mockPatient.name[0].given[0]);
+    expect(screen.getByLabelText(/family name/i)).toHaveValue(mockPatient.name[0].family);
+    expect(
+      screen.getByRole('radio', {
+        name: /^male$/i,
+      }),
+    ).toBeChecked();
+    expect(
+      screen.getByRole('radio', {
+        name: /^female$/i,
+      }),
+    ).not.toBeChecked();
+    expect(screen.getAllByRole('tab', { name: /yes/i })).toHaveLength(2);
+
+    await user.click(screen.getByRole('button', { name: /update patient/i }));
+
+    expect(mockSavePatientForm).toHaveBeenCalledWith(
+      false,
+      {
+        addNameInLocalLanguage: false,
+        additionalFamilyName: '',
+        additionalGivenName: '',
+        additionalMiddleName: '',
+        address: {
+          country: 'កម្ពុជា (Cambodia)',
+        },
+        birthdate: '1972-04-04',
+        birthdateEstimated: false,
+        deathCause: '',
+        nonCodedCauseOfDeath: '',
+        deathDate: undefined,
+        deathTime: undefined,
+        deathTimeFormat: 'AM',
+        familyName: 'Wilson',
+        gender: 'male',
+        givenName: 'John',
+        identifiers: {
+          idCard: {
+            autoGeneration: false,
+            identifierName: 'ID Card',
+            identifierTypeUuid: 'b4143563-16cd-4439-b288-f83d61670fc8',
+            identifierUuid: '346d09b1-8509-43c6-9697-3b4d1ce06ad6',
+            identifierValue: '1234567890',
+            initialValue: '1234567890',
+            preferred: false,
+            required: false,
+            selectedSource: null,
+          },
+          openMrsId: {
+            autoGeneration: false,
+            identifierName: 'OpenMRS ID',
+            identifierTypeUuid: '05a29f94-c0ed-11e2-94be-8c13b969e334',
+            identifierUuid: '1f0ad7a1-430f-4397-b571-59ea654a52db',
+            identifierValue: '100GEJ',
+            initialValue: '100GEJ',
+            preferred: true,
+            required: true,
+            selectedSource: null,
+          },
+        },
+        isDead: false,
+        middleName: '',
+        monthsEstimated: 0,
+        patientUuid: '8673ee4f-e2ab-4077-ba55-4980f408773e',
+        relationships: [],
+        telephoneNumber: '',
+        unidentifiedPatient: undefined,
+        yearsEstimated: 0,
+      },
+      expect.anything(),
+      null,
+      undefined,
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      { patientSaved: false, generatedIdentifiers: {}, addedIdentifiers: {} },
+    );
+  });
+
+  it.each(['another-patient-uuid', undefined])(
+    'preserves retry state for the same patient and resets it when the route patient changes to %s',
+    async (nextPatientUuid) => {
+      const user = userEvent.setup();
+      const mockSavePatientForm = vi.fn<SavePatientForm>().mockRejectedValue(new Error('Save failed'));
+      const renderForm = () => (
+        <ResourcesContextProvider value={mockResourcesContextValue}>
+          <PatientRegistration savePatientForm={mockSavePatientForm} />
+        </ResourcesContextProvider>
+      );
+      const { rerender } = render(renderForm());
+
+      await user.click(screen.getByRole('button', { name: /update patient/i }));
+      expect(mockSavePatientForm).toHaveBeenCalledOnce();
+      const firstManager = mockSavePatientForm.mock.calls[0][8];
+      firstManager.patientSaved = true;
+      firstManager.generatedIdentifiers.openMrsId = { sourceUuid: 'source-uuid', identifier: '10001V' };
+      firstManager.addedIdentifiers.openMrsId = '10001V';
+
+      rerender(renderForm());
+      await user.click(screen.getByRole('button', { name: /update patient/i }));
+      expect(mockSavePatientForm).toHaveBeenCalledTimes(2);
+      expect(mockSavePatientForm.mock.calls[1][8]).toBe(firstManager);
+      expect(firstManager.addedIdentifiers.openMrsId).toBe('10001V');
+
+      mockUseParams.mockReturnValue({ patientUuid: nextPatientUuid });
+      rerender(renderForm());
+      await user.click(screen.getByRole('button', { name: /update patient|register patient/i }));
+      expect(mockSavePatientForm).toHaveBeenCalledTimes(3);
+      const nextManager = mockSavePatientForm.mock.calls[2][8];
+      expect(nextManager).not.toBe(firstManager);
+      expect(nextManager).toEqual(new SavePatientTransactionManager());
+    },
+  );
 });

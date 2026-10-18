@@ -1,9 +1,9 @@
 import React from 'react';
-import styles from '../patient-registration.scss';
 import { Tile } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
-import { SectionDefinition } from '../../config-schema';
+import { type SectionDefinition } from '../../config-schema';
 import { Section } from './section.component';
+import styles from './section.scss';
 
 export interface SectionWrapperProps {
   sectionDefinition: SectionDefinition;
@@ -23,7 +23,7 @@ export const SectionWrapper = ({ sectionDefinition, index }: SectionWrapperProps
    * t('relationshipsSection', 'Relationships')
    */
   return (
-    <div id={sectionDefinition.id} style={{ scrollMarginTop: '4rem' }}>
+    <div id={sectionDefinition.id} style={{ scrollMarginTop: '1rem' }}>
       <h3 className={styles.productiveHeading02} style={{ color: '#161616' }}>
         {index + 1}. {t(`${sectionDefinition.id}Section`, sectionDefinition.name)}
       </h3>

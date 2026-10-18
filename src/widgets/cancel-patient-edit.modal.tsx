@@ -1,27 +1,22 @@
 import React from 'react';
-import { Button, ModalHeader, ModalBody, ModalFooter } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
+import { Button, ModalBody, ModalFooter, ModalHeader } from '@carbon/react';
 
-interface CancelPatientEditProps {
+interface CancelPatientEditPropsModal {
   close(): void;
   onConfirm(): void;
 }
 
-const CancelPatientEdit: React.FC<CancelPatientEditProps> = ({ close, onConfirm }) => {
+const CancelPatientEditModal: React.FC<CancelPatientEditPropsModal> = ({ close, onConfirm }) => {
   const { t } = useTranslation();
   return (
     <>
       <ModalHeader
-        label={t('discardChanges', 'Discard Changes')}
-        title={t('discardModalHeader', 'Confirm Discard Changes')}
+        closeModal={close}
+        title={t('confirmDiscardChangesTitle', 'Are you sure you want to discard these changes?')}
       />
       <ModalBody>
-        <p>
-          {t(
-            'discardModalBody',
-            "The changes you made to this patient's details have not been saved. Discard changes?",
-          )}
-        </p>
+        <p>{t('confirmDiscardChangesBody', 'Your unsaved changes will be lost if you proceed to discard the form')}.</p>
       </ModalBody>
       <ModalFooter>
         <Button kind="secondary" onClick={close}>
@@ -35,4 +30,4 @@ const CancelPatientEdit: React.FC<CancelPatientEditProps> = ({ close, onConfirm 
   );
 };
 
-export default CancelPatientEdit;
+export default CancelPatientEditModal;

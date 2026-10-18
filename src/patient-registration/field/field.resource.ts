@@ -1,11 +1,12 @@
-import { FetchResponse, openmrsFetch, showSnackbar } from '@openmrs/esm-framework';
+import { useMemo } from 'react';
 import useSWRImmutable from 'swr/immutable';
-import { ConceptAnswers, ConceptResponse } from '../patient-registration.types';
+import { type FetchResponse, openmrsFetch, restBaseUrl, showSnackbar } from '@openmrs/esm-framework';
+import { type ConceptAnswers, type ConceptResponse } from '../patient-registration.types';
 
 export function useConcept(conceptUuid: string): { data: ConceptResponse; isLoading: boolean } {
   const shouldFetch = typeof conceptUuid === 'string' && conceptUuid !== '';
   const { data, error, isLoading } = useSWRImmutable<FetchResponse<ConceptResponse>, Error>(
-    shouldFetch ? `/ws/rest/v1/concept/${conceptUuid}` : null,
+    shouldFetch ? `${restBaseUrl}/concept/${conceptUuid}` : null,
     openmrsFetch,
   );
   if (error) {
@@ -15,13 +16,18 @@ export function useConcept(conceptUuid: string): { data: ConceptResponse; isLoad
       kind: 'error',
     });
   }
-  return { data: data?.data, isLoading };
+  const results = useMemo(() => ({ data: data?.data, isLoading }), [data, isLoading]);
+  return results;
 }
 
-export function useConceptAnswers(conceptUuid: string): { data: Array<ConceptAnswers>; isLoading: boolean } {
+export function useConceptAnswers(conceptUuid: string): {
+  data: Array<ConceptAnswers>;
+  isLoading: boolean;
+  error: Error;
+} {
   const shouldFetch = typeof conceptUuid === 'string' && conceptUuid !== '';
   const { data, error, isLoading } = useSWRImmutable<FetchResponse<ConceptResponse>, Error>(
-    shouldFetch ? `/ws/rest/v1/concept/${conceptUuid}` : null,
+    shouldFetch ? `${restBaseUrl}/concept/${conceptUuid}?v=custom:(uuid,display,answers:(uuid,display))` : null,
     openmrsFetch,
   );
   if (error) {
@@ -31,5 +37,6 @@ export function useConceptAnswers(conceptUuid: string): { data: Array<ConceptAns
       kind: 'error',
     });
   }
-  return { data: data?.data?.answers, isLoading };
+  const results = useMemo(() => ({ data: data?.data?.answers, isLoading, error }), [isLoading, error, data]);
+  return results;
 }

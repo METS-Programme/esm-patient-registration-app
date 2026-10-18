@@ -1,29 +1,35 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input } from '../../input/basic-input/input/input.component';
-import { SelectInput } from '../../input/basic-input/select/select-input.component';
-import { PatientRegistrationContext } from '../../patient-registration-context';
+import { Checkbox, Layer } from '@carbon/react';
+import { useField } from 'formik';
+import { usePatientRegistrationContext } from '../../patient-registration-context';
+import { Field } from '../../field/field.component';
 import styles from './../section.scss';
 
-export const DeathInfoSection = () => {
-  const { values } = React.useContext(PatientRegistrationContext);
+export interface DeathInfoSectionProps {
+  fields: Array<string>;
+}
+
+export const DeathInfoSection: React.FC<DeathInfoSectionProps> = ({ fields }) => {
   const { t } = useTranslation();
+  const { values, setFieldValue } = usePatientRegistrationContext();
+  const [deathDate, deathDateMeta] = useField('deathDate');
+  const today = new Date();
 
   return (
     <section className={styles.formSection} aria-label="Death Info Section">
-      <h5 className={`omrs-type-title-5 ${styles.formSectionTitle}`}>Death Info</h5>
       <section className={styles.fieldGroup}>
-        <Input labelText={t('isDeadInputLabel', 'Is Dead')} name="isDead" id="isDead" />
-        {values.isDead && (
-          <>
-            <Input labelText={t('deathDateInputLabel', 'Date of Death')} name="deathDate" id="deathDate" />
-            <SelectInput
-              options={[t('unknown', 'Unknown'), t('stroke', 'Stroke')]}
-              label={t('causeOfDeathInputLabel', 'Cause of Death')}
-              name="deathCause"
+        <Layer>
+          <div className={styles.isDeadFieldContainer}>
+            <Checkbox
+              checked={values.isDead}
+              id="isDead"
+              labelText={t('isDeadInputLabel', 'Is dead')}
+              onChange={(event, { checked, id }) => setFieldValue(id, checked)}
             />
-          </>
-        )}
+          </div>
+        </Layer>
+        {values.isDead ? fields.map((field) => <Field key={`death-info-${field}`} name={field} />) : null}
       </section>
     </section>
   );

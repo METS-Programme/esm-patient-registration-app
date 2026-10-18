@@ -1,76 +1,142 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { Formik, Form } from 'formik';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor } from '@testing-library/react';
+import { Form, Formik } from 'formik';
+import { getDefaultsFromConfigSchema, useConfig } from '@openmrs/esm-framework';
+import { type FormValues } from '../../patient-registration.types';
 import { initialFormValues } from '../../patient-registration.component';
+import { PatientRegistrationContextProvider } from '../../patient-registration-context';
+import { type RegistrationConfig, esmPatientRegistrationSchema } from '../../../config-schema';
 import { DeathInfoSection } from './death-info-section.component';
-import { FormValues } from '../../patient-registration-types';
-import { PatientRegistrationContext } from '../../patient-registration-context';
 
-jest.mock('@openmrs/esm-framework', () => {
-  const originalModule = jest.requireActual('@openmrs/esm-framework');
+const mockUseConfig = vi.mocked(useConfig<RegistrationConfig>);
+
+/**
+ * Helper to render DeathInfoSection with Formik for state-dependent tests.
+ */
+function renderDeathInfoSectionWithFormik(fields: string[] = [], initialValues: Partial<FormValues> = {}) {
+  const defaultValues = {
+    isDead: false,
+    ...initialValues,
+  };
+
+  let formValuesRef: FormValues = { ...initialFormValues, ...defaultValues } as FormValues;
+
+  const utils = render(
+    <Formik initialValues={defaultValues} onSubmit={() => {}}>
+      {({ setFieldValue, values }) => {
+        formValuesRef = { ...initialFormValues, ...values } as FormValues;
+        return (
+          <Form>
+            <PatientRegistrationContextProvider
+              value={{
+                identifierTypes: [],
+                values: formValuesRef,
+                validationSchema: null,
+                inEditMode: false,
+                setFieldValue: setFieldValue as any,
+                setCapturePhotoProps: vi.fn(),
+                setFieldTouched: vi.fn().mockResolvedValue(undefined),
+                currentPhoto: '',
+                initialFormValues: formValuesRef,
+              }}>
+              <DeathInfoSection fields={fields} />
+            </PatientRegistrationContextProvider>
+          </Form>
+        );
+      }}
+    </Formik>,
+  );
 
   return {
-    ...originalModule,
-    validator: jest.fn(),
+    ...utils,
+    getFormValues: () => formValuesRef,
   };
-});
+}
 
-// TODO: Implement feature and get tests to pass
-describe('death info section', () => {
-  const formValues: FormValues = initialFormValues;
-
-  const setupSection = async (isDead?: boolean) => {
-    render(
-      <PatientRegistrationContext.Provider value={{ values: { isDead: isDead || false } }}>
-        <Formik initialValues={{ ...initialFormValues, isDead }} onSubmit={null}>
-          <Form>
-            <DeathInfoSection />
-          </Form>
-        </Formik>
-      </PatientRegistrationContext.Provider>,
-    );
-    const allInputs = screen.queryAllByLabelText(
-      (content, element) => element.tagName.toLowerCase() === 'input',
-    ) as Array<HTMLInputElement>;
-    const allSelects = screen.queryAllByRole('combobox') as Array<HTMLInputElement>;
-    let inputAndSelectNames = [];
-    allInputs.forEach((input) => inputAndSelectNames.push(input.name));
-    allSelects.forEach((select) => inputAndSelectNames.push(select.name));
-    return inputAndSelectNames;
-  };
-
-  it('has the correct number of inputs if is dead is checked', async () => {
-    const inputAndSelectNames = await setupSection(true);
-    expect(inputAndSelectNames.length).toBe(3);
+describe('Death info section', () => {
+  beforeEach(() => {
+    mockUseConfig.mockReturnValue({
+      ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+      fieldDefinitions: [],
+    });
   });
 
-  it('has the correct number of inputs if is dead is not checked', async () => {
-    const inputAndSelectNames = await setupSection(false);
-    expect(inputAndSelectNames.length).toBe(1);
+  describe('Rendering', () => {
+    it('renders the section with checkbox', () => {
+      renderDeathInfoSectionWithFormik();
+
+      expect(screen.getByRole('region', { name: /death info section/i })).toBeInTheDocument();
+      expect(screen.getByRole('checkbox', { name: /is dead/i })).toBeInTheDocument();
+    });
+
+    it('shows checkbox as checked when isDead is true', () => {
+      renderDeathInfoSectionWithFormik([], { isDead: true });
+
+      const checkbox = screen.getByRole('checkbox', { name: /is dead/i });
+      expect(checkbox).toBeChecked();
+    });
+
+    it('shows checkbox as unchecked when isDead is false', () => {
+      renderDeathInfoSectionWithFormik([], { isDead: false });
+
+      const checkbox = screen.getByRole('checkbox', { name: /is dead/i });
+      expect(checkbox).not.toBeChecked();
+    });
   });
 
-  it('has isDead checkbox', async () => {
-    const inputAndSelectNames = await setupSection();
-    expect(inputAndSelectNames).toContain('isDead');
-  });
+  describe('User interaction', () => {
+    it('toggles death info fields when user clicks the checkbox', async () => {
+      const user = userEvent.setup();
+      const { getFormValues } = renderDeathInfoSectionWithFormik([]);
 
-  it('has death date if is dead is checked', async () => {
-    const inputAndSelectNames = await setupSection(true);
-    expect(inputAndSelectNames).toContain('deathDate');
-  });
+      const checkbox = screen.getByRole('checkbox', { name: /is dead/i });
+      expect(checkbox).not.toBeChecked();
 
-  it('has no death date if is dead is not checked', async () => {
-    const inputAndSelectNames = await setupSection(false);
-    expect(inputAndSelectNames).not.toContain('deathDate');
-  });
+      // Click to check
+      await user.click(checkbox);
 
-  it('has death cause if is dead is checked', async () => {
-    const inputAndSelectNames = await setupSection(true);
-    expect(inputAndSelectNames).toContain('deathCause');
-  });
+      await waitFor(() => {
+        expect(getFormValues().isDead).toBe(true);
+      });
 
-  it('has no death cause if is dead is not checked', async () => {
-    const inputAndSelectNames = await setupSection(false);
-    expect(inputAndSelectNames).not.toContain('deathCause');
+      await waitFor(() => {
+        expect(checkbox).toBeChecked();
+      });
+
+      // Click to uncheck
+      await user.click(checkbox);
+
+      await waitFor(() => {
+        expect(getFormValues().isDead).toBe(false);
+      });
+
+      await waitFor(() => {
+        expect(checkbox).not.toBeChecked();
+      });
+    });
+
+    it('updates form values when user toggles the checkbox', async () => {
+      const user = userEvent.setup();
+      const { getFormValues } = renderDeathInfoSectionWithFormik([]);
+
+      const checkbox = screen.getByRole('checkbox', { name: /is dead/i });
+      expect(checkbox).not.toBeChecked();
+      expect(getFormValues().isDead).toBe(false);
+
+      // Check the checkbox
+      await user.click(checkbox);
+
+      expect(checkbox).toBeChecked();
+      expect(getFormValues().isDead).toBe(true);
+
+      // Uncheck the checkbox
+      await user.click(checkbox);
+      await waitFor(() => {
+        expect(checkbox).not.toBeChecked();
+      });
+      expect(getFormValues().isDead).toBe(false);
+    });
   });
 });

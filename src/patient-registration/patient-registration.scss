@@ -1,13 +1,9 @@
-@use '@carbon/styles/scss/spacing';
-@use '@carbon/styles/scss/type';
-@import '~@openmrs/esm-styleguide/src/vars';
-
-.title {
-  color: var(--omrs-color-brand-teal);
-}
+@use '@carbon/layout';
+@use '@carbon/type';
+@use '@openmrs/esm-styleguide/src/vars' as *;
 
 .submit {
-  width: 250px;
+  width: 15.625rem;
 }
 
 .submit:hover {
@@ -19,46 +15,59 @@
 }
 
 .submitButton {
-  margin-bottom: spacing.$spacing-05;
+  margin-bottom: layout.$spacing-05;
   width: 11.688rem;
   display: block;
 }
 
 .infoGrid {
   width: 100%;
-  padding-left: spacing.$spacing-07;
+  padding-left: layout.$spacing-07;
   margin-bottom: 40vh;
-  margin-top: spacing.$spacing-05;
+  margin-top: layout.$spacing-05;
   max-width: 50rem;
+}
+
+:global(.omrs-breakpoint-lt-desktop) {
+  .infoGrid {
+    max-width: unset;
+  }
 }
 
 .label01 {
   @include type.type-style('label-01');
-  margin-top: spacing.$spacing-05;
-  margin-bottom: spacing.$spacing-05;
-  color: $ui-04;
-}
-
-.productiveHeading02 {
-  @include type.type-style('heading-compact-02');
-  color: $ui-04;
-  cursor: pointer;
+  margin-top: layout.$spacing-05;
+  margin-bottom: layout.$spacing-05;
+  color: $ui-05;
 }
 
 .space05 {
-  margin: spacing.$spacing-05 0 spacing.$spacing-05 0;
+  margin: layout.$spacing-05 0;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  margin: layout.$spacing-07 0;
+  border: none;
+  background-color: $ui-03;
 }
 
 .formContainer {
   display: flex;
   width: 100%;
+  align-items: flex-start;
+  height: calc(100dvh - var(--omrs-topnav-height, 3rem)); // subtract nav height
+  overflow-y: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .stickyColumn {
   position: sticky;
-  margin-top: spacing.$spacing-05;
-  // 3rem for the nav height and 1rem for top margin
-  top: 4rem;
+  top: layout.$spacing-05;
 }
 
 .touchTarget a:active {
@@ -68,7 +77,7 @@
 .linkName {
   color: $color-gray-70;
   line-height: 1.38;
-  font-size: spacing.$spacing-05;
+  font-size: layout.$spacing-05;
   font-weight: 600;
 
   &:active {
@@ -83,13 +92,12 @@
   }
 }
 
-.main {
-  background-color: white;
-}
+.spinner {
+  min-height: layout.$spacing-05;
+  width: max-content;
 
-:global(.omrs-breakpoint-lt-desktop) {
-  .infoGrid {
-    max-width: unset;
+  :global(.cds--inline-loading__text) {
+    @include type.type-style('body-01');
   }
 }
 
@@ -103,6 +111,6 @@ html[dir='rtl'] {
 
   .infoGrid {
     padding-left: unset;
-    padding-right: spacing.$spacing-07;
+    padding-right: layout.$spacing-07;
   }
 }

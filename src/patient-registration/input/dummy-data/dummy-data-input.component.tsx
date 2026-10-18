@@ -1,6 +1,8 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Button } from '@carbon/react';
 import { v4 } from 'uuid';
-import { FormValues } from '../../patient-registration.types';
+import { type FormValues } from '../../patient-registration.types';
 import styles from './../input.scss';
 
 interface DummyDataInputProps {
@@ -16,15 +18,18 @@ export const dummyFormValues: FormValues = {
   additionalMiddleName: '',
   additionalFamilyName: 'Smitty',
   addNameInLocalLanguage: true,
-  gender: 'Male',
-  birthdate: new Date(2020, 1, 1) as any,
+  gender: 'male',
+  birthdate: new Date(2020, 1, 1),
   yearsEstimated: 1,
   monthsEstimated: 2,
   birthdateEstimated: true,
   telephoneNumber: '0800001066',
   isDead: false,
   deathDate: '',
+  deathTime: '',
+  deathTimeFormat: 'AM',
   deathCause: '',
+  nonCodedCauseOfDeath: '',
   relationships: [],
   address: {
     address1: 'Bom Jesus Street',
@@ -38,15 +43,14 @@ export const dummyFormValues: FormValues = {
 };
 
 export const DummyDataInput: React.FC<DummyDataInputProps> = ({ setValues }) => {
+  const { t } = useTranslation();
   return (
-    <main>
-      <button
-        onClick={() => setValues(dummyFormValues)}
-        className={`omrs-btn omrs-filled-neutral ${styles.dummyData}`}
-        type="button"
-        aria-label="Dummy Data Input">
-        Input Dummy Data
-      </button>
-    </main>
+    <Button
+      kind="tertiary"
+      onClick={() => setValues(dummyFormValues)}
+      className={styles.dummyData}
+      aria-label={t('inputDummyData', 'Input Dummy Data')}>
+      {t('inputDummyData', 'Input Dummy Data')}
+    </Button>
   );
 };

@@ -1,11 +1,11 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback } from 'react';
 import classNames from 'classnames';
 import dayjs from 'dayjs';
 import { Layer, SelectItem, TimePicker, TimePickerSelect } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
 import { useField } from 'formik';
 import { OpenmrsDatePicker } from '@openmrs/esm-framework';
-import { PatientRegistrationContext } from '../../patient-registration-context';
+import { usePatientRegistrationContext } from '../../patient-registration-context';
 import type { FormValues } from '../../patient-registration.types';
 import styles from '../field.scss';
 
@@ -24,13 +24,12 @@ export const DateAndTimeOfDeathField: React.FC = () => {
 };
 
 function DeathDateField() {
-  const contextValues = useContext(PatientRegistrationContext);
-  const { values, setFieldValue } = contextValues || {};
+  const { values, setFieldValue } = usePatientRegistrationContext();
   const [deathDate, deathDateMeta] = useField<keyof FormValues>('deathDate');
   const { t } = useTranslation();
   const today = dayjs().hour(23).minute(59).second(59).toDate();
   const onDateChange = useCallback(
-    (selectedDate: any) => {
+    (selectedDate: Date) => {
       setFieldValue(
         'deathDate',
         selectedDate ? dayjs(selectedDate).hour(0).minute(0).second(0).millisecond(0).toDate() : undefined,
