@@ -1,3 +1,4 @@
+@use '@carbon/colors' as colors;
 @use '@carbon/layout';
 @use '@carbon/type';
 @use '@openmrs/esm-styleguide/src/vars' as *;
@@ -65,10 +66,17 @@
   }
 }
 
+.stickyColumn {
+  position: sticky;
+  top: layout.$spacing-05;
+}
+
 // Wide layout: the form becomes a responsive workspace. The docked panel
 // (see workspace-panel.scss) is a flex sibling, so the form column shrinks
 // to make room for it; container queries below reflow fields based on the
-// space actually left, not the viewport.
+// space actually left, not the viewport. The sidebar becomes a numbered
+// step navigator with captions and actions pinned to its bottom; the
+// classic layout keeps the plain sticky link list above.
 .wideWorkspace {
   .infoGrid {
     max-width: none;
@@ -81,11 +89,95 @@
       padding-right: layout.$spacing-07;
     }
   }
-}
 
-.stickyColumn {
-  position: sticky;
-  top: layout.$spacing-05;
+  .stickyColumn {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    width: 16rem;
+    flex-shrink: 0;
+    height: 100%;
+    padding: layout.$spacing-05;
+  }
+
+  .navList {
+    display: flex;
+    flex-direction: column;
+    gap: layout.$spacing-02;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: layout.$spacing-03;
+    overflow-y: auto;
+  }
+
+  .navItem {
+    display: flex;
+    align-items: flex-start;
+    gap: layout.$spacing-03;
+    width: 100%;
+    padding: layout.$spacing-03 layout.$spacing-04;
+    border: none;
+    border-inline-start: 3px solid transparent;
+    background-color: transparent;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .navNumber {
+    @include type.type-style('label-01');
+    display: grid;
+    place-items: center;
+    flex: none;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border: 1px solid $ui-04;
+    border-radius: 50%;
+    color: $text-02;
+  }
+
+  .navText {
+    min-width: 0;
+  }
+
+  .navTitle {
+    @include type.type-style('body-compact-01');
+    display: block;
+    font-weight: 600;
+    color: $ui-05;
+  }
+
+  .navCaption {
+    @include type.type-style('label-01');
+    display: block;
+    margin-top: 2px;
+    color: $text-02;
+  }
+
+  .navItemActive {
+    border-inline-start: 3px solid colors.$blue-60;
+    background-color: colors.$blue-10;
+
+    .navNumber {
+      border-color: colors.$blue-60;
+      color: colors.$blue-60;
+    }
+  }
+
+  .sidebarActions {
+    margin-top: auto;
+    padding-top: layout.$spacing-05;
+
+    .divider {
+      display: none;
+    }
+
+    .submitButton,
+    .cancelButton {
+      display: block;
+      width: 100%;
+    }
+  }
 }
 
 .touchTarget a:active {

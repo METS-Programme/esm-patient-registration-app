@@ -356,6 +356,51 @@ describe('Registering a new patient', () => {
     expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
   });
 
+  it('renders the numbered section navigator with captions', async () => {
+    renderWithContext(
+      <PatientRegistration savePatientForm={vi.fn()} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await screen.findByRole('heading', { name: /create new patient/i });
+
+    const nav = screen.getByRole('navigation', { name: /sections/i });
+    expect(within(nav).getByText('1')).toBeInTheDocument();
+    expect(within(nav).getByText('2')).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: /demographics/i })).toBeInTheDocument();
+    expect(within(nav).getByRole('button', { name: /contact info/i })).toBeInTheDocument();
+
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+    await userEvent.setup().click(within(nav).getByRole('button', { name: /demographics/i }));
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+  });
+
+  it('shows the configured section description as the navigator caption', async () => {
+    mockUseConfig.mockReturnValue({
+      ...getDefaultsFromConfigSchema(esmPatientRegistrationSchema),
+      ...mockOpenmrsConfig,
+      sectionDefinitions: [
+        {
+          id: 'demographics',
+          name: 'Demographics',
+          description: 'Name, sex, birth date',
+          fields: ['name', 'gender', 'dob'],
+        },
+        mockOpenmrsConfig.sectionDefinitions[1],
+      ],
+    });
+    renderWithContext(
+      <PatientRegistration savePatientForm={vi.fn()} />,
+      ResourcesContextProvider,
+      mockResourcesContextValue,
+    );
+
+    await screen.findByRole('navigation', { name: /sections/i });
+    expect(screen.getByText('Name, sex, birth date')).toBeInTheDocument();
+  });
+
   it('saves the patient without extra info', async () => {
     const user = userEvent.setup();
 

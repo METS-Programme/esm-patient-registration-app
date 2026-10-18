@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import classNames from 'classnames';
-import { Button, InlineLoading, Link } from '@carbon/react';
-import { XAxis } from '@carbon/react/icons';
+import { Button, InlineLoading } from '@carbon/react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Form, Formik, type FormikHelpers, type FormikErrors } from 'formik';
@@ -28,6 +27,7 @@ import { type CapturePhotoProps, type FormValues } from './patient-registration.
 import { type SavePatientForm, SavePatientTransactionManager } from './form-manager';
 import { useInitialFormValues, usePatientUuidMap } from './patient-registration-hooks';
 import { useActiveSection } from './use-active-section';
+import { SectionNav } from './section-nav.component';
 import BeforeSavePrompt from './before-save-prompt.component';
 import PatientVerification from '../patient-verification/patient-verification.component';
 import { type VerificationSearchParams } from '../patient-verification/verification-types';
@@ -220,40 +220,33 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
                   </h4>
                   {showDummyDataInput && <DummyDataInput setValues={props.setValues} />}
                   <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>
-                  {sections.map((section) => (
-                    <div className={classNames(styles.space05, styles.touchTarget)} key={section.name}>
-                      <Link
-                        className={classNames(styles.linkName, section.id === activeSection && styles.activeLink)}
-                        aria-current={section.id === activeSection ? 'true' : undefined}
-                        onClick={() => scrollIntoView(section.id)}>
-                        <XAxis size={16} /> {t(`${section.id}Section`, section.name)}
-                      </Link>
-                    </div>
-                  ))}
-                  <hr className={styles.divider} />
-                  <Button
-                    className={styles.submitButton}
-                    type="submit"
-                    onClick={() => props.validateForm().then((errors) => displayErrors(errors))}
-                    // Current session and identifiers are required for patient registration.
-                    // If currentSession or identifierTypes are not available, then the
-                    // user should be blocked to register the patient.
-                    disabled={!currentSession || !identifierTypes || props.isSubmitting}>
-                    {props.isSubmitting ? (
-                      <InlineLoading
-                        className={styles.spinner}
-                        description={`${t('submitting', 'Submitting')} ...`}
-                        iconDescription="submitting"
-                      />
-                    ) : inEditMode ? (
-                      t('updatePatient', 'Update patient')
-                    ) : (
-                      t('registerPatient', 'Register patient')
-                    )}
-                  </Button>
-                  <Button className={styles.cancelButton} kind="secondary" onClick={cancelRegistration}>
-                    {t('cancel', 'Cancel')}
-                  </Button>
+                  <SectionNav sections={sections} activeSection={activeSection} onNavigate={scrollIntoView} />
+                  <div className={styles.sidebarActions}>
+                    <hr className={styles.divider} />
+                    <Button
+                      className={styles.submitButton}
+                      type="submit"
+                      onClick={() => props.validateForm().then((errors) => displayErrors(errors))}
+                      // Current session and identifiers are required for patient registration.
+                      // If currentSession or identifierTypes are not available, then the
+                      // user should be blocked to register the patient.
+                      disabled={!currentSession || !identifierTypes || props.isSubmitting}>
+                      {props.isSubmitting ? (
+                        <InlineLoading
+                          className={styles.spinner}
+                          description={`${t('submitting', 'Submitting')} ...`}
+                          iconDescription="submitting"
+                        />
+                      ) : inEditMode ? (
+                        t('updatePatient', 'Update patient')
+                      ) : (
+                        t('registerPatient', 'Register patient')
+                      )}
+                    </Button>
+                    <Button className={styles.cancelButton} kind="secondary" onClick={cancelRegistration}>
+                      {t('cancel', 'Cancel')}
+                    </Button>
+                  </div>
                 </div>
                 {/* Registration Form */}
                 <div className={styles.infoGrid}>
