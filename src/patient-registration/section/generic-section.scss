@@ -27,6 +27,14 @@
   grid-column: 1 / -1;
 }
 
+// Two-row cards (the name card beside sex and date of birth) only make
+// sense in the two-column flow.
+@container workspaceForm (min-width: 34rem) {
+  .fieldSlotTall {
+    grid-row: span 2;
+  }
+}
+
 // Two columns from 34rem so the layout survives the docked identifier
 // panel: on a 1280px desktop the workspace container is ~32.5rem with the
 // panel open, and the previous single 48rem breakpoint collapsed
