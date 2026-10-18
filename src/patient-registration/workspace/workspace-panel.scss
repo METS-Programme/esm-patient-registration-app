@@ -22,8 +22,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: $ui-03;
-  border-bottom: 1px solid $text-03;
+  block-size: 3rem;
+  background-color: $ui-02;
+  border-bottom: 1px solid $ui-03;
   padding: 0 layout.$spacing-05;
 }
 
@@ -39,5 +40,5 @@
 }
 
 .panelFooter {
-  border-top: 1px solid $text-03;
+  border-top: 1px solid $ui-03;
 }
