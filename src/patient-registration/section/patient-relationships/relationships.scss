@@ -2,40 +2,79 @@
 @use '@carbon/type';
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
-.labelText {
-  @include type.type-style('label-01');
-}
-
-.bodyShort02 {
-  @include type.type-style('body-compact-02');
-}
-
-.searchBox {
-  margin-bottom: layout.$spacing-05;
-}
-
-.relationshipHeader {
-  display: flex;
-  align-items: center;
-}
-
-.productiveHeading {
-  @include type.type-style('heading-compact-02');
-  color: $text-02;
-}
-
 .trashCan {
   color: $danger !important;
 }
 
-:global(.omrs-breakpoint-lt-desktop) {
-  .relationshipHeader {
-    justify-content: space-between;
+// Columnar relationships table: light header rule, hairline row dividers,
+// borderless like the reference design.
+.relationshipsTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    @include type.type-style('label-01');
+    padding: 0 layout.$spacing-03 layout.$spacing-03 0;
+    border-bottom: 1px solid $ui-03;
+    color: $text-02;
+    font-weight: 600;
+    text-align: start;
+  }
+
+  td {
+    padding: layout.$spacing-04 layout.$spacing-03 layout.$spacing-04 0;
+    border-bottom: 1px solid $ui-03;
+    vertical-align: middle;
   }
 }
 
+.relationshipRow td {
+  width: auto;
+}
+
+.nameCell,
+.typeCell {
+  min-width: 0;
+}
+
+.cellText {
+  @include type.type-style('body-compact-01');
+  color: $ui-05;
+}
+
+.cellMuted {
+  @include type.type-style('body-compact-01');
+  color: $text-03;
+}
+
+.actionsHeader,
+.actionsCell {
+  width: 4rem;
+  text-align: end;
+}
+
 .emptyState {
-  @include type.type-style('body-01');
+  display: flex;
+  align-items: center;
+  gap: layout.$spacing-04;
+  padding: layout.$spacing-05 0;
+}
+
+.emptyStateIcon {
+  flex: none;
+  color: $text-02;
+}
+
+.emptyStateTitle {
+  @include type.type-style('body-compact-01');
   margin: 0;
+  font-weight: 600;
+  color: $ui-05;
+}
+
+.emptyStateHint {
+  @include type.type-style('label-01');
+  margin: 0;
+  margin-top: layout.$spacing-02;
   color: $text-02;
 }

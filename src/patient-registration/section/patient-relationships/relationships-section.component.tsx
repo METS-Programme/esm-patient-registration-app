@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useState } from 'react';
 import { ActionableNotification, Button, Layer, Select, SelectItem, SkeletonText } from '@carbon/react';
-import { TrashCan } from '@carbon/react/icons';
+import { TrashCan, UserMultiple } from '@carbon/react/icons';
 import { FieldArray } from 'formik';
 import { useTranslation } from 'react-i18next';
 import { Autosuggest } from '../../input/custom-input/autosuggest/autosuggest.component';
@@ -78,72 +78,72 @@ const RelationshipView: React.FC<RelationshipViewProps> = ({
   }, [index, setFieldValue, relationship]);
 
   return relationship.action !== 'DELETE' ? (
-    <div className={styles.relationship}>
-      <div className={styles.searchBox}>
-        <div className={styles.relationshipHeader}>
-          <h4 className={styles.productiveHeading}>{t('relationshipPlaceholder', 'Relationship')}</h4>
-          <Button
-            kind="ghost"
-            iconDescription={t('deleteRelationshipTooltipText', 'Delete')}
-            hasIconOnly
-            onClick={deleteRelationship}>
-            <TrashCan size={16} className={styles.trashCan} />
-          </Button>
-        </div>
-        <div>
-          {newRelationship ? (
-            <Autosuggest
-              id={`relationships[${index}].relatedPersonUuid`}
-              labelText={t('relativeFullNameLabelText', 'Full name')}
-              placeholder={t('relativeNamePlaceholder', 'Firstname Familyname')}
-              defaultValue={relationship.relatedPersonName}
-              onSuggestionSelected={handleSuggestionSelected}
-              invalid={isInvalid}
-              invalidText={t('relationshipPersonMustExist', 'Related person must be an existing person')}
-              getSearchResults={searchPerson}
-              getDisplayValue={(item) => item.display}
-              getFieldValue={(item) => item.uuid}
-            />
-          ) : (
-            <>
-              <span className={styles.labelText}>{t('relativeFullNameLabelText', 'Full name')}</span>
-              <p className={styles.bodyShort02}>{relationship.relatedPersonName}</p>
-            </>
-          )}
-        </div>
-      </div>
-      <div className={styles.selectRelationshipType} style={{ marginBottom: '1rem' }}>
-        <Layer>
-          <Select
-            id={selectId}
-            labelText={t('relationship', 'Relationship')}
-            onChange={handleRelationshipTypeChange}
-            name={`relationships[${index}].relationshipType`}
-            value={relationship.relationshipType || 'placeholder-item'}>
+    <tr className={styles.relationshipRow}>
+      <td className={styles.nameCell}>
+        {newRelationship ? (
+          <Autosuggest
+            id={`relationships[${index}].relatedPersonUuid`}
+            labelText={t('relativeFullNameLabelText', 'Full name')}
+            placeholder={t('relativeNamePlaceholder', 'Firstname Familyname')}
+            defaultValue={relationship.relatedPersonName}
+            onSuggestionSelected={handleSuggestionSelected}
+            invalid={isInvalid}
+            invalidText={t('relationshipPersonMustExist', 'Related person must be an existing person')}
+            getSearchResults={searchPerson}
+            getDisplayValue={(item) => item.display}
+            getFieldValue={(item) => item.uuid}
+          />
+        ) : (
+          <span className={styles.cellText}>{relationship.relatedPersonName}</span>
+        )}
+      </td>
+      <td className={styles.typeCell}>
+        <Select
+          id={selectId}
+          hideLabel
+          labelText={t('relationshipTypeHeaderText', 'Relationship type')}
+          onChange={handleRelationshipTypeChange}
+          name={`relationships[${index}].relationshipType`}
+          value={relationship.relationshipType || 'placeholder-item'}>
+          <SelectItem
+            disabled
+            hidden
+            value="placeholder-item"
+            text={t('relationshipToPatient', 'Relationship to patient')}
+          />
+          {displayRelationshipTypes.map((relationshipType, index) => (
             <SelectItem
-              disabled
-              hidden
-              value="placeholder-item"
-              text={t('relationshipToPatient', 'Relationship to patient')}
+              text={relationshipType.display}
+              value={`${relationshipType.uuid}/${relationshipType.direction}`}
+              key={`relationship-${relationshipType.uuid}-${index}`}
             />
-            {displayRelationshipTypes.map((relationshipType, index) => (
-              <SelectItem
-                text={relationshipType.display}
-                value={`${relationshipType.uuid}/${relationshipType.direction}`}
-                key={`relationship-${relationshipType.uuid}-${index}`}
-              />
-            ))}
-          </Select>
-        </Layer>
-      </div>
-    </div>
+          ))}
+        </Select>
+      </td>
+      <td className={styles.contactCell}>
+        <span className={styles.cellMuted}>&mdash;</span>
+      </td>
+      <td className={styles.actionsCell}>
+        <Button
+          kind="ghost"
+          hasIconOnly
+          iconDescription={t('deleteRelationshipTooltipText', 'Delete')}
+          onClick={deleteRelationship}
+          renderIcon={(props) => <TrashCan size={16} {...props} className={styles.trashCan} />}
+        />
+      </td>
+    </tr>
   ) : (
-    <ActionableNotification
-      kind="info"
-      title={t('relationshipRemovedText', 'Relationship removed')}
-      actionButtonLabel={t('restoreRelationshipActionButton', 'Undo')}
-      onActionButtonClick={restoreRelationship}
-    />
+    <tr>
+      <td colSpan={4}>
+        <ActionableNotification
+          kind="info"
+          title={t('relationshipRemovedText', 'Relationship removed')}
+          actionButtonLabel={t('restoreRelationshipActionButton', 'Undo')}
+          onActionButtonClick={restoreRelationship}
+        />
+      </td>
+    </tr>
   );
 };
 
@@ -197,24 +197,45 @@ export const RelationshipsSection = () => {
             values: { relationships },
           },
         }) => (
-          <div>
-            {relationships && relationships.length > 0 ? (
-              relationships.map((relationship: RelationshipValue, index) => {
-                return (
-                  <div key={relationship.uuid ?? relationship.clientId}>
-                    <RelationshipView
-                      relationship={relationship}
-                      index={index}
-                      displayRelationshipTypes={displayRelationshipTypes}
-                      remove={remove}
-                    />
-                  </div>
-                );
-              })
-            ) : (
-              <p className={styles.emptyState}>{t('noRelationshipsYet', 'No relationships added yet.')}</p>
-            )}
-          </div>
+          <table className={styles.relationshipsTable}>
+            <thead>
+              <tr>
+                <th scope="col">{t('nameHeaderText', 'Name')}</th>
+                <th scope="col">{t('relationshipTypeHeaderText', 'Relationship type')}</th>
+                <th scope="col">{t('contactHeaderText', 'Contact')}</th>
+                <th scope="col" className={styles.actionsHeader}>
+                  {t('actionsHeaderText', 'Actions')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {relationships && relationships.length > 0 ? (
+                relationships.map((relationship: RelationshipValue, index) => (
+                  <RelationshipView
+                    key={relationship.uuid ?? relationship.clientId}
+                    relationship={relationship}
+                    index={index}
+                    displayRelationshipTypes={displayRelationshipTypes}
+                    remove={remove}
+                  />
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={4}>
+                    <div className={styles.emptyState}>
+                      <UserMultiple size={20} className={styles.emptyStateIcon} />
+                      <div>
+                        <p className={styles.emptyStateTitle}>{t('noRelationshipsAdded', 'No relationships added')}</p>
+                        <p className={styles.emptyStateHint}>
+                          {t('addRelationshipHint', 'Add a guardian, caregiver, or related person where applicable.')}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         )}
       </FieldArray>
     </section>

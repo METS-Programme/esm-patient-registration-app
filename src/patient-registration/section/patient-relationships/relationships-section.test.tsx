@@ -140,7 +140,8 @@ describe('RelationshipsSection', () => {
 
       expect(screen.getByLabelText(/relationships section/i)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /add relationship/i })).toBeInTheDocument();
-      expect(screen.getByText(/no relationships added yet/i)).toBeInTheDocument();
+      expect(screen.getByText(/no relationships added/i)).toBeInTheDocument();
+      expect(screen.getByText(/add a guardian, caregiver/i)).toBeInTheDocument();
     });
 
     it('renders existing relationships', () => {
@@ -171,7 +172,7 @@ describe('RelationshipsSection', () => {
       );
 
       expect(screen.getByLabelText(/relationships section/i)).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: /relationship/i })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: /relationship type/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
       expect(screen.getByRole('searchbox', { name: /full name/i })).toBeInTheDocument();
     });
