@@ -65,6 +65,24 @@
   }
 }
 
+// Wide layout: the form becomes a responsive workspace. The docked panel
+// (see workspace-panel.scss) is a flex sibling, so the form column shrinks
+// to make room for it; container queries below reflow fields based on the
+// space actually left, not the viewport.
+.wideWorkspace {
+  .infoGrid {
+    max-width: none;
+    container-type: inline-size;
+    container-name: workspaceForm;
+  }
+
+  @media (min-width: 75rem) {
+    .infoGrid {
+      padding-right: layout.$spacing-07;
+    }
+  }
+}
+
 .stickyColumn {
   position: sticky;
   top: layout.$spacing-05;

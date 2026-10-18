@@ -61,6 +61,8 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
 
   const location = currentSession?.sessionLocation?.uuid;
   const inEditMode = isLoadingPatientToEdit ? undefined : !!(uuidOfPatientToEdit && patientToEdit);
+  const layoutVariant = config.layout?.variant ?? 'wide';
+  const formContainerRef = useRef<HTMLDivElement>(null);
   const showDummyDataInput = useMemo(
     () => localStorage.getItem('openmrs:devtools') === 'true' && !inEditMode,
     [inEditMode],
@@ -189,9 +191,9 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
       onSubmit={onFormSubmit}
       validationSchema={validationSchema}>
       {(props) => (
-        <Form className={styles.form}>
+        <Form className={classNames(styles.form, layoutVariant === 'wide' && styles.wideWorkspace)}>
           <BeforeSavePrompt when={Object.keys(props.touched).length > 0} redirect={target} />
-          <div className={styles.formContainer}>
+          <div className={styles.formContainer} ref={formContainerRef}>
             {/* Navigation Sidebar */}
             <div className={styles.stickyColumn}>
               <h4>

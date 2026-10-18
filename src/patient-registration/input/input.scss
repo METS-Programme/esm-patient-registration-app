@@ -135,3 +135,21 @@
 .reserveActionSpace {
   min-width: layout.$spacing-11;
 }
+
+// Narrow workspace container (docked panel open, or small desktop): inputs
+// go fluid so they never overflow. Only applies inside the wide layout,
+// which is the sole ancestor that names the `workspaceForm` container.
+@container workspaceForm (max-width: 48rem) {
+  .textInput,
+  .numberInput,
+  .selectInput,
+  .dateInput,
+  .telInput {
+    width: 100% !important;
+  }
+
+  .checkboxField {
+    width: 100%;
+    margin-left: 0;
+  }
+}

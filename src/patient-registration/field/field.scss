@@ -175,3 +175,21 @@
   margin-bottom: layout.$spacing-05;
   white-space: pre-line;
 }
+
+// Narrow workspace container: half-width fields take the full row and the
+// demographics name/photo grid stacks. Classic layout has no such container.
+@container workspaceForm (max-width: 48rem) {
+  .halfWidthInDesktopView {
+    width: 100%;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nameField,
+  .photoExtension {
+    grid-row: auto;
+    grid-column: 1;
+  }
+}
