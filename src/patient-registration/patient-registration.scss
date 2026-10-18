@@ -60,6 +60,24 @@
   &::-webkit-scrollbar {
     display: none;
   }
+
+  // Solid fields: Carbon inputs are underline-only by default, but the
+  // registration form reads better with fully bordered fields like the
+  // reference design. Validation keeps Carbon's red border.
+  :global(.cds--text-input),
+  :global(.cds--text-area),
+  :global(.cds--select-input),
+  :global(.cds--number input),
+  :global(.cds--date-input) {
+    border: 1px solid colors.$gray-30;
+  }
+
+  :global(.cds--text-input.cds--text-input--invalid),
+  :global(.cds--select-input.cds--select-input--invalid),
+  :global(.cds--number input.cds--number--invalid),
+  :global(.cds--date-input.cds--text-input--invalid) {
+    border-color: colors.$red-60;
+  }
 }
 
 // The sidebar is a numbered step navigator shared by both layout variants.
