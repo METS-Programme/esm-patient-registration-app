@@ -17,7 +17,7 @@ export const DeathInfoSection: React.FC<DeathInfoSectionProps> = ({ fields }) =>
   const today = new Date();
 
   return (
-    <section className={styles.formSection} aria-label="Death Info Section">
+    <section aria-label="Death Info Section">
       <section className={styles.fieldGroup}>
         <Layer>
           <div className={styles.isDeadFieldContainer}>

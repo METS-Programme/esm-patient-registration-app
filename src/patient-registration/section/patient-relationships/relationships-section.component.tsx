@@ -9,7 +9,6 @@ import { usePatientRegistrationContext } from '../../patient-registration-contex
 import { fetchPerson } from '../../patient-registration.resource';
 import { useResourcesContext } from '../../../resources-context';
 import { type RelationshipValue } from '../../patient-registration.types';
-import sectionStyles from '../section.scss';
 import styles from './relationships.scss';
 
 interface RelationshipType {
@@ -204,7 +203,7 @@ export const RelationshipsSection = () => {
             {relationships && relationships.length > 0
               ? relationships.map((relationship: RelationshipValue, index) => {
                   return (
-                    <div key={relationship.uuid ?? relationship.clientId} className={sectionStyles.formSection}>
+                    <div key={relationship.uuid ?? relationship.clientId}>
                       <RelationshipView
                         relationship={relationship}
                         index={index}

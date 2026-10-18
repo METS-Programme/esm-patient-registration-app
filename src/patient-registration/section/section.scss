@@ -3,19 +3,47 @@
 @use '@carbon/type';
 @use '@openmrs/esm-styleguide/src/vars' as *;
 
-.label01 {
-  @include type.type-style('label-01');
-  margin-top: layout.$spacing-05;
+.isDeadFieldContainer {
   margin-bottom: layout.$spacing-05;
+}
+
+.section {
+  margin-bottom: layout.$spacing-07;
+  scroll-margin-top: 1rem;
+}
+
+.sectionHeadingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: layout.$spacing-05;
+}
+
+.sectionHeading {
+  @include type.type-style('heading-compact-02');
+  margin: 0;
   color: $ui-05;
 }
 
-.productiveHeading02 {
-  @include type.type-style('heading-compact-02');
-  color: $ui-04;
-  cursor: pointer;
+.sectionNumber {
+  color: colors.$gray-60;
 }
 
-.isDeadFieldContainer {
-  margin-bottom: layout.$spacing-05;
+.sectionCaption {
+  display: block;
+  @include type.type-style('label-01');
+  margin-top: layout.$spacing-02;
+  color: $text-02;
+}
+
+.sectionAction {
+  flex-shrink: 0;
+}
+
+.sectionBody {
+  margin-top: layout.$spacing-05;
+  padding: layout.$spacing-05 layout.$spacing-06;
+  background-color: $ui-02;
+  border: 1px solid $ui-03;
+  border-radius: 4px;
 }

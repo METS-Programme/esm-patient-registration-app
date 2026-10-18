@@ -1,8 +1,8 @@
 import React from 'react';
-import { Tile } from '@carbon/react';
 import { useTranslation } from 'react-i18next';
 import { type SectionDefinition } from '../../config-schema';
 import { Section } from './section.component';
+import { SectionHeading } from './section-heading.component';
 import styles from './section.scss';
 
 export interface SectionWrapperProps {
@@ -23,17 +23,10 @@ export const SectionWrapper = ({ sectionDefinition, index }: SectionWrapperProps
    * t('relationshipsSection', 'Relationships')
    */
   return (
-    <div id={sectionDefinition.id} style={{ scrollMarginTop: '1rem' }}>
-      <h3 className={styles.productiveHeading02} style={{ color: '#161616' }}>
-        {index + 1}. {t(`${sectionDefinition.id}Section`, sectionDefinition.name)}
-      </h3>
-      <span className={styles.label01}>
-        {t('allFieldsRequiredText', 'All fields are required unless marked optional')}
-      </span>
-      <div style={{ margin: '1rem 0 1rem' }}>
-        <Tile>
-          <Section sectionDefinition={sectionDefinition} />
-        </Tile>
+    <div id={sectionDefinition.id} className={styles.section}>
+      <SectionHeading index={index} title={t(`${sectionDefinition.id}Section`, sectionDefinition.name)} />
+      <div className={styles.sectionBody}>
+        <Section sectionDefinition={sectionDefinition} />
       </div>
     </div>
   );
