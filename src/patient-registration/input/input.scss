@@ -136,10 +136,11 @@
   min-width: layout.$spacing-11;
 }
 
-// Narrow workspace container (docked panel open, or small desktop): inputs
-// go fluid so they never overflow. Only applies inside the wide layout,
-// which is the sole ancestor that names the `workspaceForm` container.
-@container workspaceForm (max-width: 48rem) {
+// Wide layout: the fixed widths above were sized for the stacked classic
+// form, so inside the wide workspace the slot card decides the width and
+// every input goes fluid to fill its card. Classic has no such container
+// and keeps the fixed widths.
+@container workspaceForm (min-width: 0px) {
   .textInput,
   .numberInput,
   .selectInput,
