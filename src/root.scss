@@ -14,5 +14,10 @@
   &:global(.cds--css-grid) {
     margin-inline: 0;
     padding-inline: 0;
+    // Drop Carbon's 99rem cap as well: with centering removed, a wider window
+    // would pile the leftover width entirely on the right, leaving the docked
+    // workspace panel short of the window edge. The form keeps its own inner
+    // max-width, so only the shell stretches.
+    max-inline-size: none;
   }
 }
