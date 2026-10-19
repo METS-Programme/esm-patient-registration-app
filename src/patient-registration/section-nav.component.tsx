@@ -8,9 +8,11 @@ interface SectionNavProps {
   sections: Array<SectionDefinition>;
   activeSection?: string;
   onNavigate: (sectionId: string) => void;
+  collapsed?: boolean;
+  id?: string;
 }
 
-export const SectionNav = ({ sections, activeSection, onNavigate }: SectionNavProps) => {
+export const SectionNav = ({ sections, activeSection, onNavigate, collapsed, id }: SectionNavProps) => {
   const { t } = useTranslation();
 
   /*
@@ -23,23 +25,26 @@ export const SectionNav = ({ sections, activeSection, onNavigate }: SectionNavPr
    * t('relationshipsSectionDescription', 'Guardians, caregivers')
    */
   return (
-    <nav aria-label={t('sectionsNav', 'Sections')} className={styles.navList}>
+    <nav id={id} aria-label={t('sectionsNav', 'Sections')} className={styles.navList}>
       {sections.map((section, index) => (
         <button
           key={section.id}
           type="button"
           className={classNames(styles.navItem, section.id === activeSection && styles.navItemActive)}
           aria-current={section.id === activeSection ? 'true' : undefined}
+          title={collapsed ? t(`${section.id}Section`, section.name) : undefined}
           onClick={() => onNavigate(section.id)}>
           <span className={styles.navNumber} aria-hidden="true">
             {index + 1}
           </span>
-          <span className={styles.navText}>
-            <span className={styles.navTitle}>{t(`${section.id}Section`, section.name)}</span>
-            {section.description && (
-              <span className={styles.navCaption}>{t(`${section.id}SectionDescription`, section.description)}</span>
-            )}
-          </span>
+          {!collapsed && (
+            <span className={styles.navText}>
+              <span className={styles.navTitle}>{t(`${section.id}Section`, section.name)}</span>
+              {section.description && (
+                <span className={styles.navCaption}>{t(`${section.id}SectionDescription`, section.description)}</span>
+              )}
+            </span>
+          )}
         </button>
       ))}
     </nav>
