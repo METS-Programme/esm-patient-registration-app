@@ -33,12 +33,24 @@
   justify-content: center;
 }
 
-.nameField {
-  grid-row: 1;
-  grid-column: 1;
+// The Full Name card is its own query container: the name-known toggle
+// sits above the name fields, and the fields reflow against the card's
+// actual width — which shrinks in the two-column section flow and when the
+// docked identifier panel is open — rather than the viewport. The patient
+// photo is its own card (photo-field.component.tsx), rendered ahead of
+// this one by the demographics section.
+.nameCard {
+  container-type: inline-size;
+  container-name: nameCard;
+  min-width: 0;
 }
 
-.nameField > :global(.cds--content-switcher) {
+.nameKnown {
+  min-width: 0;
+  margin-bottom: layout.$spacing-05;
+}
+
+.nameKnown > :global(.cds--content-switcher) {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: max-content;
@@ -46,7 +58,7 @@
 }
 
 .contentSwitcher {
-  margin-bottom: layout.$spacing-05;
+  margin-top: layout.$spacing-03;
 }
 
 .dobField > :global(.cds--content-switcher) {
@@ -56,11 +68,14 @@
   justify-content: flex-start;
 }
 
-.photoExtension {
-  margin-bottom: layout.$spacing-05;
-  grid-row: 1;
-  grid-column: 2;
-  justify-self: center;
+.nameFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: layout.$spacing-05;
+}
+
+.nameFieldLead {
+  grid-column: 1 / -1;
 }
 
 .sexField,
@@ -139,17 +154,6 @@
     grid-template-rows: auto auto;
   }
 
-  .nameField {
-    grid-row: 2;
-    grid-column: 1;
-  }
-
-  .photoExtension {
-    grid-column: 1;
-    grid-row: 1;
-    justify-self: start;
-  }
-
   .radioButton label {
     height: layout.$spacing-09 !important;
   }
@@ -177,19 +181,25 @@
   white-space: pre-line;
 }
 
-// Narrow workspace container: half-width fields take the full row and the
-// demographics name/photo grid stacks. Classic layout has no such container.
-// The threshold matches the two-column breakpoint in generic-section.scss —
-// 34rem keeps two-up layouts alive when the docked identifier panel is open.
+// Narrow name card: every name field takes the full row. Below two column
+// widths (~35rem) the card reads better fully linear.
+@container nameCard (max-width: 35rem) {
+  .nameFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nameFields > * {
+    grid-column: 1 / -1;
+  }
+}
+
+// Narrow workspace container: half-width fields take the full row. Classic
+// layout has no such container. The threshold matches the two-column
+// breakpoint in generic-section.scss — 34rem keeps two-up layouts alive
+// when the docked identifier panel is open.
 @container workspaceForm (max-width: 34rem) {
   .grid {
     grid-template-columns: 1fr;
-  }
-
-  .nameField,
-  .photoExtension {
-    grid-row: auto;
-    grid-column: 1;
   }
 }
 

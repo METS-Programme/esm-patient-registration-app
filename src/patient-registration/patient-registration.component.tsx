@@ -59,8 +59,12 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
 
   const [patientUuidMap] = usePatientUuidMap({}, patientToEdit, uuidOfPatientToEdit);
 
+  const layout = useLayoutType();
   const [target, setTarget] = useState<undefined | string>();
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  // Tablets start with the navigator collapsed so the form keeps its width;
+  // the user can always expand it. Collapsing only changes the sidebar — the
+  // form above never remounts and entered data is preserved.
+  const [navCollapsed, setNavCollapsed] = useState(layout === 'tablet');
   const [capturePhotoProps, setCapturePhotoProps] = useState<CapturePhotoProps | null>(null);
   const [verificationSearchParams, setVerificationSearchParams] = useState<VerificationSearchParams>({
     registry: '',
@@ -70,7 +74,6 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
   const location = currentSession?.sessionLocation?.uuid;
   const inEditMode = isLoadingPatientToEdit ? undefined : !!(uuidOfPatientToEdit && patientToEdit);
   const layoutVariant = config.layout?.variant ?? 'wide';
-  const layout = useLayoutType();
   const workspace = useWorkspacePanelState();
   const dockedPanelOpen = layoutVariant === 'wide' && isDesktop(layout) && workspace.activePanel !== null;
   const formContainerRef = useRef<HTMLDivElement>(null);
@@ -100,6 +103,10 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
     formContainerRef,
     useMemo(() => sections.map((s) => s.id), [sections]),
   );
+
+  // Phones get a fully linear experience: no persistent sidebar, a compact
+  // top section navigator, and a sticky bottom action bar.
+  const isPhone = layout === 'phone';
 
   const onFormSubmit = async (values: FormValues, helpers: FormikHelpers<FormValues>) => {
     helpers.setSubmitting(true);
@@ -206,120 +213,152 @@ const PatientRegistrationForm: React.FC<PatientRegistrationProps> = ({ savePatie
       initialValues={initialFormValues}
       onSubmit={onFormSubmit}
       validationSchema={validationSchema}>
-      {(props) => (
-        <WorkspaceContextProvider value={workspace}>
-          <Form className={classNames(layoutVariant === 'wide' && styles.wideWorkspace)}>
-            <BeforeSavePrompt when={Object.keys(props.touched).length > 0} redirect={target} />
-            <div
-              className={classNames(styles.formContainer, dockedPanelOpen && styles.panelOpen)}
-              ref={formContainerRef}>
-              <PatientRegistrationContextProvider value={createContextValue(props)}>
-                {/* Navigation Sidebar */}
-                <div className={classNames(styles.stickyColumn, navCollapsed && styles.collapsed)}>
-                  <div className={styles.sidebarHeader}>
-                    {!navCollapsed && (
-                      <h4>
-                        {inEditMode
-                          ? t('editPatientDetails', 'Edit patient details')
-                          : t('createNewPatient', 'Create new patient')}
-                      </h4>
-                    )}
-                    <Button
-                      className={styles.collapseToggle}
-                      kind="ghost"
-                      size="sm"
-                      hasIconOnly
-                      renderIcon={navCollapsed ? ChevronRight : ChevronLeft}
-                      iconDescription={
-                        navCollapsed
-                          ? t('expandSectionNav', 'Expand section navigator')
-                          : t('collapseSectionNav', 'Collapse section navigator')
-                      }
-                      tooltipAlignment="start"
-                      aria-expanded={!navCollapsed}
-                      aria-controls="registration-sections-nav"
-                      onClick={() => setNavCollapsed((collapsed) => !collapsed)}
-                    />
-                  </div>
-                  {showDummyDataInput && !navCollapsed && <DummyDataInput setValues={props.setValues} />}
-                  {!navCollapsed && <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>}
-                  <SectionNav
-                    id="registration-sections-nav"
-                    sections={sections}
-                    activeSection={activeSection}
-                    onNavigate={scrollIntoView}
-                    collapsed={navCollapsed}
-                  />
-                  <div className={styles.sidebarActions}>
-                    <hr className={styles.divider} />
-                    <Button
-                      className={styles.submitButton}
-                      type="submit"
-                      onClick={() => props.validateForm().then((errors) => displayErrors(errors))}
-                      // Current session and identifiers are required for patient registration.
-                      // If currentSession or identifierTypes are not available, then the
-                      // user should be blocked to register the patient.
-                      disabled={!currentSession || !identifierTypes || props.isSubmitting}
-                      hasIconOnly={navCollapsed}
-                      renderIcon={navCollapsed ? Save : undefined}
-                      iconDescription={
-                        navCollapsed
-                          ? inEditMode
-                            ? t('updatePatient', 'Update patient')
-                            : t('registerPatient', 'Register patient')
-                          : undefined
-                      }>
-                      {props.isSubmitting ? (
-                        <InlineLoading
-                          className={styles.spinner}
-                          description={`${t('submitting', 'Submitting')} ...`}
-                          iconDescription="submitting"
+      {(props) => {
+        const renderSubmitButton = (className: string, iconOnly = false) => (
+          <Button
+            className={className}
+            type="submit"
+            onClick={() => props.validateForm().then((errors) => displayErrors(errors))}
+            // Current session and identifiers are required for patient registration.
+            // If currentSession or identifierTypes are not available, then the
+            // user should be blocked to register the patient.
+            disabled={!currentSession || !identifierTypes || props.isSubmitting}
+            hasIconOnly={iconOnly}
+            renderIcon={iconOnly ? Save : undefined}
+            iconDescription={
+              iconOnly
+                ? inEditMode
+                  ? t('updatePatient', 'Update patient')
+                  : t('registerPatient', 'Register patient')
+                : undefined
+            }>
+            {props.isSubmitting ? (
+              <InlineLoading
+                className={styles.spinner}
+                description={`${t('submitting', 'Submitting')} ...`}
+                iconDescription="submitting"
+              />
+            ) : iconOnly ? null : inEditMode ? (
+              t('updatePatient', 'Update patient')
+            ) : (
+              t('registerPatient', 'Register patient')
+            )}
+          </Button>
+        );
+
+        const renderCancelButton = (className: string, iconOnly = false) => (
+          <Button
+            className={className}
+            kind="secondary"
+            onClick={cancelRegistration}
+            hasIconOnly={iconOnly}
+            renderIcon={iconOnly ? Close : undefined}
+            iconDescription={iconOnly ? t('cancel', 'Cancel') : undefined}>
+            {iconOnly ? null : t('cancel', 'Cancel')}
+          </Button>
+        );
+
+        return (
+          <WorkspaceContextProvider value={workspace}>
+            <Form className={classNames(layoutVariant === 'wide' && styles.wideWorkspace)}>
+              <BeforeSavePrompt when={Object.keys(props.touched).length > 0} redirect={target} />
+              <div
+                className={classNames(
+                  styles.formContainer,
+                  dockedPanelOpen && styles.panelOpen,
+                  isPhone && styles.phoneLayout,
+                )}
+                ref={formContainerRef}>
+                <PatientRegistrationContextProvider value={createContextValue(props)}>
+                  {/* Navigation Sidebar — phones use the compact in-form navigator instead */}
+                  {!isPhone && (
+                    <div className={classNames(styles.stickyColumn, navCollapsed && styles.collapsed)}>
+                      <div className={styles.sidebarHeader}>
+                        {!navCollapsed && (
+                          <h4>
+                            {inEditMode
+                              ? t('editPatientDetails', 'Edit patient details')
+                              : t('createNewPatient', 'Create new patient')}
+                          </h4>
+                        )}
+                        <Button
+                          className={styles.collapseToggle}
+                          kind="ghost"
+                          size="sm"
+                          hasIconOnly
+                          renderIcon={navCollapsed ? ChevronRight : ChevronLeft}
+                          iconDescription={
+                            navCollapsed
+                              ? t('expandSectionNav', 'Expand section navigator')
+                              : t('collapseSectionNav', 'Collapse section navigator')
+                          }
+                          tooltipAlignment="start"
+                          aria-expanded={!navCollapsed}
+                          aria-controls="registration-sections-nav"
+                          onClick={() => setNavCollapsed((collapsed) => !collapsed)}
                         />
-                      ) : navCollapsed ? null : inEditMode ? (
-                        t('updatePatient', 'Update patient')
-                      ) : (
-                        t('registerPatient', 'Register patient')
-                      )}
-                    </Button>
-                    <Button
-                      className={styles.cancelButton}
-                      kind="secondary"
-                      onClick={cancelRegistration}
-                      hasIconOnly={navCollapsed}
-                      renderIcon={navCollapsed ? Close : undefined}
-                      iconDescription={navCollapsed ? t('cancel', 'Cancel') : undefined}>
-                      {navCollapsed ? null : t('cancel', 'Cancel')}
-                    </Button>
-                  </div>
-                </div>
-                {/* Registration Form */}
-                <div className={styles.infoGrid}>
-                  <PatientVerification
-                    formProps={props}
-                    verificationParams={verificationSearchParams}
-                    setVerificationParams={setVerificationSearchParams}
-                  />
-                  {sections.map((section, index) => (
-                    <SectionWrapper
-                      key={`registration-section-${section.id}`}
-                      sectionDefinition={section}
-                      index={index}
+                      </div>
+                      {showDummyDataInput && !navCollapsed && <DummyDataInput setValues={props.setValues} />}
+                      {!navCollapsed && <p className={styles.label01}>{t('jumpTo', 'Jump to')}</p>}
+                      <SectionNav
+                        id="registration-sections-nav"
+                        sections={sections}
+                        activeSection={activeSection}
+                        onNavigate={scrollIntoView}
+                        collapsed={navCollapsed}
+                      />
+                      <div className={styles.sidebarActions}>
+                        <hr className={styles.divider} />
+                        {renderSubmitButton(styles.submitButton, navCollapsed)}
+                        {renderCancelButton(styles.cancelButton, navCollapsed)}
+                      </div>
+                    </div>
+                  )}
+                  {/* Registration Form */}
+                  <div className={styles.infoGrid}>
+                    <PatientVerification
+                      formProps={props}
+                      verificationParams={verificationSearchParams}
+                      setVerificationParams={setVerificationSearchParams}
                     />
-                  ))}
-                </div>
-                {/* Docked workspace panels (wide layout, desktop): shrink the form
+                    {isPhone && (
+                      <SectionNav
+                        id="registration-sections-nav"
+                        sections={sections}
+                        activeSection={activeSection}
+                        onNavigate={scrollIntoView}
+                        horizontal
+                      />
+                    )}
+                    {sections.map((section, index) => (
+                      <SectionWrapper
+                        key={`registration-section-${section.id}`}
+                        sectionDefinition={section}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                  {/* Persistent bottom actions (phone) */}
+                  {isPhone && (
+                    <div className={styles.mobileActionBar}>
+                      {renderCancelButton(styles.mobileCancelButton)}
+                      {renderSubmitButton(styles.mobileSubmitButton)}
+                    </div>
+                  )}
+                  {/* Docked workspace panels (wide layout, desktop): shrink the form
                     instead of overlaying it. */}
-                {dockedPanelOpen && workspace.activePanel === 'identifiers' && (
-                  <WorkspaceIdentifierPanel setFieldValue={props.setFieldValue} closeOverlay={workspace.closePanel} />
-                )}
-                {dockedPanelOpen && workspace.activePanel === 'fingerprints' && (
-                  <WorkspaceFingerprintPanel closeOverlay={workspace.closePanel} />
-                )}
-              </PatientRegistrationContextProvider>
-            </div>
-          </Form>
-        </WorkspaceContextProvider>
-      )}
+                  {dockedPanelOpen && workspace.activePanel === 'identifiers' && (
+                    <WorkspaceIdentifierPanel setFieldValue={props.setFieldValue} closeOverlay={workspace.closePanel} />
+                  )}
+                  {dockedPanelOpen && workspace.activePanel === 'fingerprints' && (
+                    <WorkspaceFingerprintPanel closeOverlay={workspace.closePanel} />
+                  )}
+                </PatientRegistrationContextProvider>
+              </div>
+            </Form>
+          </WorkspaceContextProvider>
+        );
+      }}
     </Formik>
   );
 };

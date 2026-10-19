@@ -9,10 +9,12 @@ interface SectionNavProps {
   activeSection?: string;
   onNavigate: (sectionId: string) => void;
   collapsed?: boolean;
+  /** Phone layout: a compact horizontal stepper rendered above the form. */
+  horizontal?: boolean;
   id?: string;
 }
 
-export const SectionNav = ({ sections, activeSection, onNavigate, collapsed, id }: SectionNavProps) => {
+export const SectionNav = ({ sections, activeSection, onNavigate, collapsed, horizontal, id }: SectionNavProps) => {
   const { t } = useTranslation();
 
   /*
@@ -25,7 +27,10 @@ export const SectionNav = ({ sections, activeSection, onNavigate, collapsed, id 
    * t('relationshipsSectionDescription', 'Guardians, caregivers')
    */
   return (
-    <nav id={id} aria-label={t('sectionsNav', 'Sections')} className={styles.navList}>
+    <nav
+      id={id}
+      aria-label={t('sectionsNav', 'Sections')}
+      className={classNames(styles.navList, horizontal && styles.navListHorizontal)}>
       {sections.map((section, index) => (
         <button
           key={section.id}
@@ -40,7 +45,7 @@ export const SectionNav = ({ sections, activeSection, onNavigate, collapsed, id 
           {!collapsed && (
             <span className={styles.navText}>
               <span className={styles.navTitle}>{t(`${section.id}Section`, section.name)}</span>
-              {section.description && (
+              {section.description && !horizontal && (
                 <span className={styles.navCaption}>{t(`${section.id}SectionDescription`, section.description)}</span>
               )}
             </span>

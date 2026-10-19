@@ -1,8 +1,9 @@
-import React, { useCallback } from 'react';
+import React from 'react';
+import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import { ContentSwitcher, Switch } from '@carbon/react';
 import { useField } from 'formik';
-import { ExtensionSlot, useConfig } from '@openmrs/esm-framework';
+import { useConfig } from '@openmrs/esm-framework';
 import { type RegistrationConfig } from '../../../config-schema';
 import { usePatientRegistrationContext } from '../../patient-registration-context';
 import { Input } from '../../input/basic-input/input/input.component';
@@ -21,12 +22,11 @@ function checkNumber(value: string) {
 
 export const NameField = () => {
   const { t } = useTranslation();
-  const { setCapturePhotoProps, currentPhoto, setFieldValue, setFieldTouched } = usePatientRegistrationContext();
+  const { setFieldValue, setFieldTouched } = usePatientRegistrationContext();
 
   const {
     fieldConfigurations: {
       name: {
-        displayCapturePhoto,
         allowUnidentifiedPatients,
         defaultUnknownGivenName,
         defaultUnknownFamilyName,
@@ -41,19 +41,6 @@ export const NameField = () => {
   );
 
   const isPatientUnknown = isPatientUnknownValue === 'true';
-
-  const onCapturePhoto = useCallback(
-    (dataUri: string, photoDateTime: string) => {
-      if (setCapturePhotoProps) {
-        setCapturePhotoProps({
-          imageData: dataUri,
-          dateTime: photoDateTime,
-        });
-        setFieldTouched('photo', true, false);
-      }
-    },
-    [setCapturePhotoProps, setFieldTouched],
-  );
 
   const toggleNameKnown = (e) => {
     if (e.name === 'known') {
@@ -80,7 +67,7 @@ export const NameField = () => {
     />
   );
 
-  const middleNameField = displayMiddleName && (
+  const middleNameField = (
     <Input
       id="middleName"
       name="middleName"
@@ -99,50 +86,43 @@ export const NameField = () => {
     />
   );
 
-  return (
-    <div>
-      <h4 className={styles.productiveHeading02Light}>{t('fullNameLabelText', 'Full Name')}</h4>
-      <div className={styles.grid}>
-        {displayCapturePhoto && (
-          <ExtensionSlot
-            className={styles.photoExtension}
-            name="capture-patient-photo-slot"
-            state={{ onCapturePhoto, initialState: currentPhoto }}
-          />
-        )}
+  // With all three names configured, the first field leads the card on a
+  // full row and the other two sit alongside each other beneath it where
+  // the card is wide enough (see the nameCard container queries in
+  // field.scss). When the configured field order is reversed, the family
+  // name leads instead; with the middle name hidden, both remaining fields
+  // share the row.
+  const orderedNameFields = displayReverseFieldOrder
+    ? [familyNameField, ...(displayMiddleName ? [middleNameField] : []), firstNameField]
+    : [firstNameField, ...(displayMiddleName ? [middleNameField] : []), familyNameField];
 
-        <div className={styles.nameField}>
-          {(allowUnidentifiedPatients || isPatientUnknown) && (
-            <>
-              <div className={styles.dobContentSwitcherLabel}>
-                <span className={styles.label01}>{t('patientNameKnown', "Patient's Name is Known?")}</span>
-              </div>
-              <ContentSwitcher
-                className={styles.contentSwitcher}
-                size="md"
-                selectedIndex={isPatientUnknown ? 1 : 0}
-                onChange={toggleNameKnown}>
-                <Switch name="known">{t('yes', 'Yes')}</Switch>
-                <Switch name="unknown">{t('no', 'No')}</Switch>
-              </ContentSwitcher>
-            </>
-          )}
-          {!isPatientUnknown &&
-            (!displayReverseFieldOrder ? (
-              <>
-                {firstNameField}
-                {middleNameField}
-                {familyNameField}
-              </>
-            ) : (
-              <>
-                {familyNameField}
-                {middleNameField}
-                {firstNameField}
-              </>
-            ))}
+  return (
+    <div className={styles.nameCard}>
+      <h4 className={styles.productiveHeading02Light}>{t('fullNameLabelText', 'Full Name')}</h4>
+      {(allowUnidentifiedPatients || isPatientUnknown) && (
+        <div className={styles.nameKnown}>
+          <span className={styles.label01}>{t('patientNameKnown', "Patient's Name is Known?")}</span>
+          <ContentSwitcher
+            className={styles.contentSwitcher}
+            size="md"
+            selectedIndex={isPatientUnknown ? 1 : 0}
+            onChange={toggleNameKnown}>
+            <Switch name="known">{t('yes', 'Yes')}</Switch>
+            <Switch name="unknown">{t('no', 'No')}</Switch>
+          </ContentSwitcher>
         </div>
-      </div>
+      )}
+      {!isPatientUnknown && (
+        <div className={styles.nameFields}>
+          {orderedNameFields.map((field, index) => (
+            <div
+              key={index}
+              className={classNames(styles.nameFieldItem, displayMiddleName && index === 0 && styles.nameFieldLead)}>
+              {field}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

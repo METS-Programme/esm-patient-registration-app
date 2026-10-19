@@ -237,3 +237,85 @@
     display: none;
   }
 }
+
+// Phone layout: the sidebar is gone, the form stacks vertically, and the
+// persistent action bar sticks to the bottom of the scroll container.
+// scroll-padding-bottom keeps focused fields and validation messages above
+// the bar when the browser scrolls them into view.
+.phoneLayout {
+  flex-direction: column;
+  align-items: stretch;
+  scroll-padding-bottom: 5rem;
+
+  .infoGrid {
+    padding-inline: layout.$spacing-05;
+    margin-bottom: 5rem;
+  }
+}
+
+// Compact top section navigator (phone): a horizontally scrollable stepper
+// of numbered steps with their labels beneath. Items derive from the
+// configured sections — nothing is hardcoded.
+.navListHorizontal {
+  flex: none;
+  flex-direction: row;
+  align-items: stretch;
+  gap: layout.$spacing-02;
+  margin-top: layout.$spacing-04;
+  margin-bottom: layout.$spacing-05;
+  overflow-y: hidden;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navItem {
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: layout.$spacing-02;
+    width: auto;
+    padding: layout.$spacing-03 layout.$spacing-04;
+    border-inline-start: 3px solid transparent;
+    border-bottom: 3px solid transparent;
+  }
+
+  .navText {
+    text-align: center;
+  }
+
+  .navItemActive {
+    border-inline-start-color: transparent;
+    background-color: transparent;
+    border-bottom-color: colors.$blue-60;
+
+    .navNumber {
+      background-color: colors.$blue-60;
+      border-color: colors.$blue-60;
+      color: colors.$white;
+    }
+  }
+}
+
+// Persistent bottom action bar (phone): Cancel and Register stay reachable
+// without scrolling; the safe-area inset keeps it clear of the home
+// indicator on notched devices.
+.mobileActionBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  gap: layout.$spacing-03;
+  width: 100%;
+  padding: layout.$spacing-03 layout.$spacing-05;
+  padding-bottom: max(layout.$spacing-03, env(safe-area-inset-bottom));
+  background-color: colors.$white;
+  border-top: 1px solid $ui-03;
+}
+
+.mobileCancelButton,
+.mobileSubmitButton {
+  flex: 1 1 0;
+  width: auto;
+}

@@ -23,6 +23,27 @@
   border-radius: 4px;
 }
 
+// Demographics identity row: the Patient photo card and the Full Name card
+// are independent cards sharing one row — a compact photo (~30%) beside a
+// wider name card (~70%). Once the workspace container narrows (docked
+// identifier panel open, tablets, phones) the row goes linear with the
+// photo stacked above the name. The photo card leads in DOM order too, so
+// the stacked order matches the visual order. Classic layout has no
+// workspaceForm container and always stacks.
+.identityGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: layout.$spacing-05;
+  align-items: stretch;
+  margin-bottom: layout.$spacing-05;
+}
+
+@container workspaceForm (min-width: 48rem) {
+  .identityGrid {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+  }
+}
+
 .fieldSlotFull {
   grid-column: 1 / -1;
 }

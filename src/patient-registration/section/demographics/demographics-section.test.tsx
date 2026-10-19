@@ -111,6 +111,38 @@ describe('Demographics section', () => {
       expect(screen.getByRole('tab', { name: /no/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
     });
+
+    it('renders photo and name as separate cards with photo first when capture is enabled', () => {
+      mockUseConfig.mockReturnValue({
+        ...mockUseConfig(),
+        fieldConfigurations: {
+          ...mockUseConfig().fieldConfigurations,
+          name: {
+            ...mockUseConfig().fieldConfigurations.name,
+            displayCapturePhoto: true,
+          },
+        },
+      } as RegistrationConfig);
+
+      renderDemographicsSectionWithFormik(['name', 'gender', 'dob']);
+
+      // The photo and name cards are siblings of one identity row, photo
+      // leading in DOM order so the stacked (mobile) order matches.
+      const photoCard = screen.getByTestId('patient-photo-card');
+      const nameCard = screen.getByTestId('patient-name-card');
+      expect(photoCard.compareDocumentPosition(nameCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(nameCard).toContainElement(screen.getByText(/full name/i));
+      // The rest of the section still renders.
+      expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/date of birth/i)).toBeInTheDocument();
+    });
+
+    it('keeps the name in the generic flow when photo capture is disabled', () => {
+      renderDemographicsSectionWithFormik(['name', 'gender', 'dob']);
+
+      expect(screen.getByText(/full name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    });
   });
 
   describe('Additional name fields behavior', () => {
